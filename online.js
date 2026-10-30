@@ -10,10 +10,10 @@
 // ============================================================
 
 const firebaseConfig = {
-  apiKey: "ここに apiKey を貼る",
-  authDomain: "ここに authDomain を貼る",
-  projectId: "ここに projectId を貼る",
-  appId: "ここに appId を貼る"
+  apiKey: "AIzaSyBq_sGnzIjjqI5Ng0HH6jfuXEaq6ATMxMU",
+  authDomain: "mitter-puzzle.firebaseapp.com",
+  projectId: "mitter-puzzle",
+  appId: "1:29089502139:web:0f6b8225d1ce7c272fea9e"
 };
 
 // ---- ここから下は 書きかえなくて OK です ----
