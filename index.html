@@ -145,6 +145,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
 /* キャラえらび・結果・ランキング・せってい */
 .pick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.card .seg .sbtn{padding:7px 12px}
 .pick button{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:6px 4px;font-size:11px}
 .pick button .ch{height:70px}.pick button .ch.pair{height:70px}
 .pick button.on{border-color:var(--star);background:var(--panel2);box-shadow:0 0 0 1px var(--star) inset}
@@ -459,6 +460,8 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let actx=null;
+/* 音の部品。スマホのメモリを使いすぎないように、音質を少し下げた設定（32kHz）で作る */
+function makeCtx(){const C=window.AudioContext||window.webkitAudioContext;try{return new C({sampleRate:32000})}catch(e){return new C()}}
 /* タイトル画面の絵：開くたびに この中から1枚 */
 const TITLE_ART=['img/title1.webp','img/title2.webp','img/title3.webp','img/title4.webp','img/title5.webp'];
 const IMG={menu:'img/menu.webp',bg:'img/arena.webp',g:'img/panel-g.webp',logo:'img/logo.webp',tower:'img/tower.webp',top:'img/top.webp',ending:'img/ending.webp'};
@@ -483,6 +486,18 @@ const CHARS={   // キー（hero, mint…）はランキングの記録にも使
   king:{name:'オ゛崎',alias:['オ゙崎'],color:'#e8e2d6',img:imgs('king')},
 };
 const HERO='hero';
+/* エンドレス・スコアアタック用のキャラ（ストーリーには出ない）。
+   ペアは「ペアで」か「1人ずつ」をえらべる。of＝どのペアの1人か。extra＝はじめから えらべる */
+const SOLO={mint:['kitakata','souta'],sora:['danu','kobu'],coco:['minu','semi'],pair:['kurou','usami'],kuro:['fuko','gogo']};
+Object.assign(CHARS,{
+  hikono:{name:'ひこの',extra:true,img:imgs('hikono')},
+  kitakata:{name:'北方',of:'mint',img:imgs('kitakata')},souta:{name:'そうた',of:'mint',img:imgs('souta')},
+  danu:{name:'だぬ',of:'sora',img:imgs('danu')},kobu:{name:'こぶ太郎',of:'sora',img:imgs('kobu')},
+  minu:{name:'みぬ',of:'coco',img:imgs('minu')},semi:{name:'せみ',of:'coco',img:imgs('semi')},
+  kurou:{name:'玖狼',of:'pair',img:imgs('kurou')},usami:{name:'兎水',of:'pair',img:imgs('usami')},
+  fuko:{name:'風子',of:'kuro',img:imgs('fuko')},gogo:{name:'ゴゴ',of:'kuro',img:imgs('gogo')},
+});
+const baseOf=id=>(CHARS[id]&&CHARS[id].of)||id;
 
 /* ===== ストーリーの6人 =====
    think：考える間（秒、小さいほど速い）／miss：まちがえる確率／chain：れんさを狙う確率／def：高い列を先にくずす
@@ -574,13 +589,13 @@ const BGM={want:'title',cur:'',src:null,gain:null,tok:0,buf:new Map(),r:1,
   async load(url){if(this.buf.has(url))return this.buf.get(url);
     const ab=await (await fetch(url)).arrayBuffer();
     const b=await new Promise((res,rej)=>{const p=actx.decodeAudioData(ab,res,rej);if(p&&p.catch)p.catch(rej)});
-    this.buf.set(url,b);while(this.buf.size>2)this.buf.delete(this.buf.keys().next().value);return b},
+    this.buf.set(url,b);while(this.buf.size>1)this.buf.delete(this.buf.keys().next().value);return b},
   start(key='battle'){this.want=key;if(!REC.bgm)return;const url=AUDIO[key]||(key==='title'?'':AUDIO.battle);
     this.stop();if(!url)return;unlockAudio();if(!actx)return;this.cur=url;this.r=1;const tok=this.tok;
     this.load(url).then(b=>{if(tok!==this.tok||!REC.bgm)return;
       const s=actx.createBufferSource(),g=actx.createGain();s.buffer=b;s.loop=true;s.playbackRate.value=this.r;g.gain.value=.42;
       s.connect(g);g.connect(actx.destination);s.start();this.src=s;this.gain=g}).catch(()=>{})},
-  stop(){this.tok++;this.cur='';if(this.src){try{this.src.stop()}catch(e){}try{this.src.disconnect()}catch(e){}this.src=null}},
+  stop(){this.tok++;this.cur='';if(this.src){try{this.src.stop()}catch(e){}try{this.src.disconnect()}catch(e){}try{this.src.buffer=null}catch(e){}this.src=null}},
   pause(){if(this.src)try{this.gain.gain.value=0}catch(e){}},
   resume(){if(!REC.bgm)return;const url=AUDIO[this.want]||AUDIO.battle;if(!this.src||this.cur!==url){this.start(this.want);return}try{this.gain.gain.value=.42}catch(e){}},
   title(){this.want='title';if(!AUDIO.title){this.stop();return}if(!REC.bgm)return;if(this.cur===AUDIO.title&&this.src)return;if(this.cur===AUDIO.title)return;this.start('title')},
@@ -592,7 +607,7 @@ document.addEventListener('visibilitychange',()=>{if(!actx)return;try{document.h
 /* ---- 効果音（音のファイルは使わず、その場で合成） ---- */
 function se(type){
   const v=+REC.se;if(!v)return;
-  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume()}catch(e){return}
+  try{actx=actx||makeCtx();if(actx.state==='suspended')actx.resume()}catch(e){return}
   const seq={tap:[[880,.05]],catch:[[1318,.06],[1760,.09]],good:[[784,.08],[988,.08],[1175,.14]],
     miss:[[392,.1],[311,.16]],up:[[523,.08],[659,.08],[784,.08],[1046,.22]],talk:[[1046,.03]]}[type]||[[660,.08]];
   let t=actx.currentTime+.01;
@@ -777,7 +792,7 @@ function shell(title,back,onBack,right=''){if(stopGame){stopGame();stopGame=null
   app.innerHTML=`<div class="g-top"><button class="ghost" id="gBack">${back}</button><h2 class="display">${title}</h2>${right}${bgmBtn()}</div><div class="g-body" id="gBody"></div>`;
   app.querySelectorAll('.bgm-t').forEach(b=>b.onclick=e=>{e.stopPropagation();unlockAudio();BGM.toggle()});
   $('#gBack').onclick=()=>{se('tap');onBack()};return $('#gBody')}
-function unlockAudio(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume()}catch(e){}}
+function unlockAudio(){try{actx=actx||makeCtx();if(actx.state==='suspended')actx.resume()}catch(e){}}
 async function copyText(text,btn,box){try{await navigator.clipboard.writeText(text);btn.textContent='コピーしました'}catch(e){
   if(box){const r=document.createRange();r.selectNodeContents(box);const s=getSelection();s.removeAllRanges();s.addRange(r)}btn.textContent='えらんだ文字を長押しでコピー'}
   setTimeout(()=>{btn.textContent='コピー'},2200)}
@@ -1021,7 +1036,8 @@ function closeOverlay(){const o=$('#ovl');if(o)o.remove()}
    キャラは見た目だけ。凛花と、ストーリーで勝った相手が選べる */
 const MODES={end:{n:'エンドレス',d:'てんじょうまで ひたすら けす'},ta:{n:'スコアアタック',d:'2分間で どれだけ かせげるか'}};
 const TA_SEC=120;
-const unlocked=id=>id===HERO||STAGES.some((s,i)=>s.ch===id&&i<REC.prog);
+const unlocked=id=>{const c=CHARS[id];if(!c)return false;if(id===HERO||c.extra)return true;const b=baseOf(id);return STAGES.some((s,i)=>s.ch===b&&i<REC.prog)};
+const PICK_IDS=()=>[HERO,'hikono',...STAGES.map(s=>s.ch)];   // えらぶ画面にならべる順（1人ずつは ペアの中で えらぶ）
 const bestList=m=>m==='ta'?REC.bestTA:REC.best;
 const SHARE_URL='https://hkn051209.github.io/mitter-puzzle/';
 async function shareText(text,btn){
@@ -1032,13 +1048,16 @@ function endlessPick(mode='end'){
   const M=MODES[mode];
   const body=shell(M.n,'タイトルへ',title);
   if(!CHARS[REC.endChar]||!unlocked(REC.endChar))REC.endChar=HERO;
-  const draw=()=>{const ids=Object.keys(CHARS),best=bestList(mode)[0];
-    body.innerHTML=`<div class="card" style="align-items:center;text-align:center"><div class="r-ch" style="height:150px">${charHTML(REC.endChar,'attack')}</div><h3>${esc(CHARS[REC.endChar].name)}</h3><p>${M.d}。キャラは 見た目だけ かわります（つよさは みんな おなじ）</p></div>
-    <div class="pick">${ids.map(id=>unlocked(id)?`<button class="${id===REC.endChar?'on':''}" data-id="${id}">${charHTML(id)}<span>${esc(CHARS[id].name)}</span></button>`:`<button disabled class="lock"><span class="stg-q" aria-hidden="true">？</span><span>？？？</span></button>`).join('')}</div>
+  const draw=()=>{const ids=PICK_IDS(),best=bestList(mode)[0],cur=REC.endChar,base=baseOf(cur),solo=SOLO[base];
+    body.innerHTML=`<div class="card" style="align-items:center;text-align:center"><div class="r-ch" style="height:150px">${charHTML(cur,'attack')}</div><h3>${esc(CHARS[cur].name)}</h3>
+     ${solo?`<div class="seg">${[base,...solo].map(k=>`<button class="sbtn${k===cur?' on':''}" data-sub="${k}">${k===base?'ペアで':esc(CHARS[k].name)}</button>`).join('')}</div>`:''}
+     <p>${M.d}。キャラは 見た目だけ かわります（つよさは みんな おなじ）</p></div>
+    <div class="pick">${ids.map(id=>unlocked(id)?`<button class="${id===base?'on':''}" data-id="${id}">${charHTML(id)}<span>${esc(CHARS[id].name)}</span></button>`:`<button disabled class="lock"><span class="stg-q" aria-hidden="true">？</span><span>？？？</span></button>`).join('')}</div>
     <p class="note">ストーリーで かった あいては、ここで つかえるように なるよ</p>
     <p class="note">じこベスト ${best?best.s.toLocaleString()+'てん':'まだ ありません'}</p>
     <button class="primary big" id="eGo" style="align-self:center">スタート</button>`;
-    body.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{se('tap');REC.endChar=b.dataset.id;saveRec();draw()});
+    body.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{se('tap');if(baseOf(REC.endChar)!==b.dataset.id)REC.endChar=b.dataset.id;saveRec();draw()});
+    body.querySelectorAll('[data-sub]').forEach(b=>b.onclick=()=>{se('tap');REC.endChar=b.dataset.sub;saveRec();draw()});
     $('#eGo').onclick=()=>{unlockAudio();se('tap');if(!REC.tut)tutorial(()=>endless(mode));else endless(mode)}};
   draw();
 }
@@ -1111,7 +1130,8 @@ function endlessResult(rec,isBest,mode='end',timeUp){
       if(!nm||rec.s<=0){box.innerHTML=`<p>${rec.s<=0?'スコアが 0 のときは のせられません':'なまえを 入れると おくれます'}</p>`;return}
       box.innerHTML='<button class="primary" id="rSend">ランキングに おくる</button><p class="msg" id="rMsg"></p>';
       $('#rSend').onclick=async e=>{e.target.disabled=true;e.target.textContent='おくっています…';
-        try{await submit.call(O,Object.assign({},rec,{n:nm}));sent=true;se('good');draw()}
+        const r=Object.assign({},rec,{n:nm}),fb=CHARS[r.h]&&(CHARS[r.h].of||(CHARS[r.h].extra?HERO:null));
+        try{try{await submit.call(O,r)}catch(e1){if(!fb)throw e1;await submit.call(O,Object.assign(r,{h:fb}))}sent=true;se('good');draw()}   // 新しいキャラで はじかれたら、ペアの名前で もういちど
         catch(err){e.target.disabled=false;e.target.textContent='もういちど おくる';const m=$('#rMsg');m.className='msg bad';m.textContent='おくれませんでした。つうしんを たしかめてね'}};
       return}
     if(!nm||rec.s<=0){box.innerHTML=`<p>${rec.s<=0?'スコアが 0 のときは コードが でません':'なまえを 入れると「きろくコード」が でます'}</p>`;return}
