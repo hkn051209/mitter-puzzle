@@ -1,4 +1,13 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101833">
 <title>みったーパズル</title>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500&family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
 <style>
@@ -537,13 +546,26 @@ function makeCode(kind,obj){const p=b64e(JSON.stringify(obj));return `HP${kind}-
 function readCode(kind,code){const m=String(code).replace(/\s+/g,'').match(new RegExp(`^HP${kind}-([A-Za-z0-9_-]+)-([0-9A-Z]{7})$`));if(!m)return null;if(hsh(kind+m[1]+SALT)!==m[2])return null;try{return JSON.parse(b64d(m[1]))}catch(e){return null}}
 
 /* ---- BGM（ピンチで少し速くなる） ---- */
-const BGM={el:null,src:'',want:'title',start(key='battle'){this.want=key;if(!REC.bgm)return;const src=AUDIO[key]||(key==='title'?'':AUDIO.battle);if(!src){this.stop();return}
-    if(!this.el||this.src!==src){if(this.el)this.el.pause();this.el=new Audio(src);this.el.loop=true;this.el.volume=.5;this.el.setAttribute('playsinline','');this.src=src;this.r=1}
-    this.el.currentTime=0;this.el.play().catch(()=>{})},
-  stop(){if(this.el)this.el.pause()},pause(){if(this.el)this.el.pause()},resume(){if(!REC.bgm)return;const src=AUDIO[this.want]||AUDIO.battle;if(!this.el||this.src!==src){this.start(this.want);return}this.el.play().catch(()=>{})},
-  title(){this.want='title';if(!AUDIO.title){this.stop();return}if(!REC.bgm)return;if(this.src===AUDIO.title&&this.el&&!this.el.paused)return;this.start('title')},
+/* BGM は Web Audio で鳴らす（つなぎ目なくループし、スマホに「再生中」の通知が出にくい）。
+   ピンチのときは少し速くする。曲のデータは今の曲と次の曲だけ持つ（スマホのメモリ節約） */
+const BGM={want:'title',cur:'',src:null,gain:null,tok:0,buf:new Map(),r:1,
+  async load(url){if(this.buf.has(url))return this.buf.get(url);
+    const ab=await (await fetch(url)).arrayBuffer();
+    const b=await new Promise((res,rej)=>{const p=actx.decodeAudioData(ab,res,rej);if(p&&p.catch)p.catch(rej)});
+    this.buf.set(url,b);while(this.buf.size>2)this.buf.delete(this.buf.keys().next().value);return b},
+  start(key='battle'){this.want=key;if(!REC.bgm)return;const url=AUDIO[key]||(key==='title'?'':AUDIO.battle);
+    this.stop();if(!url)return;unlockAudio();if(!actx)return;this.cur=url;this.r=1;const tok=this.tok;
+    this.load(url).then(b=>{if(tok!==this.tok||!REC.bgm)return;
+      const s=actx.createBufferSource(),g=actx.createGain();s.buffer=b;s.loop=true;s.playbackRate.value=this.r;g.gain.value=.42;
+      s.connect(g);g.connect(actx.destination);s.start();this.src=s;this.gain=g}).catch(()=>{})},
+  stop(){this.tok++;this.cur='';if(this.src){try{this.src.stop()}catch(e){}try{this.src.disconnect()}catch(e){}this.src=null}},
+  pause(){if(this.src)try{this.gain.gain.value=0}catch(e){}},
+  resume(){if(!REC.bgm)return;const url=AUDIO[this.want]||AUDIO.battle;if(!this.src||this.cur!==url){this.start(this.want);return}try{this.gain.gain.value=.42}catch(e){}},
+  title(){this.want='title';if(!AUDIO.title){this.stop();return}if(!REC.bgm)return;if(this.cur===AUDIO.title&&this.src)return;if(this.cur===AUDIO.title)return;this.start('title')},
   toggle(){REC.bgm=!REC.bgm;saveRec();if(!REC.bgm)this.stop();else if(!document.querySelector('#ovl'))this.start(this.want);document.querySelectorAll('.bgm-t').forEach(b=>{b.classList.toggle('off',!REC.bgm);b.textContent=bgmLabel()})},
-  r:1,rate(r){if(this.r===r)return;this.r=r;if(this.el)try{this.el.playbackRate=r}catch(e){}}};
+  rate(r){if(this.r===r)return;this.r=r;if(this.src)try{this.src.playbackRate.value=r}catch(e){}}};
+// 画面を閉じたり別のアプリに切りかえたら、音を止める
+document.addEventListener('visibilitychange',()=>{if(!actx)return;try{document.hidden?actx.suspend():actx.resume()}catch(e){}});
 
 /* ---- 効果音（音のファイルは使わず、その場で合成） ---- */
 function se(type){
@@ -859,7 +881,7 @@ function battle(si){
    <div class="pvs-boards"><div class="pvs-me"><div class="pnl-wrap" style="background-image:url(${IMG[st.bg]||IMG.bg})"><div class="pnl-bg" id="pvMi">${charHTML(HERO)}</div><canvas class="me" id="pvA" width="1" height="1"></canvas></div><span class="pvs-n">${esc(playerName())}</span></div>
     <div class="pvs-ru"><div class="pnl-wrap" style="background-image:url(${IMG[st.bg]||IMG.bg})"><div class="pnl-bg" id="pvF">${charHTML(st.ch)}</div><canvas id="pvB" width="1" height="1"></canvas></div><span class="pvs-n">${esc(opp.name)}</span></div></div>
    ${CTRL_HTML}</div>`;
-  const avail=Math.min(body.clientWidth,420)-12,csA=Math.floor(Math.min(avail*.6/6,(viewH()-330)/12)),csB=Math.floor(Math.min(avail*.38/6,csA*.66));
+  const avail=Math.min(body.clientWidth,420)-12,csA=Math.max(16,Math.floor(Math.min(avail*.6/6,(viewH()-330)/12))),csB=Math.max(10,Math.floor(Math.min(avail*.38/6,csA*.66)));
   const say=t=>{if(t)$('#pvS').textContent=t};
   const faceT={};const face=(el,id,ex,hold)=>{const m=$(el);if(!m||ended&&!hold)return;m.innerHTML=charHTML(id,ex);clearTimeout(faceT[el]);if(!hold)faceT[el]=setTimeout(()=>{if(!ended&&$(el))$(el).innerHTML=charHTML(id,'normal')},1600)};
   const speed=el=>st.speed+Math.min(.4,el/320);
@@ -875,7 +897,7 @@ function battle(si){
       const pm=me.high(9),pr=ru.high(9);
       if(pm&&!pinchMe){face('#pvMi',HERO,'pinch',true);if(Math.random()<.6)say(pick(HL.pinch||[]))}if(!pm&&pinchMe)face('#pvMi',HERO,'normal',true);
       if(pr&&!pinchRu){face('#pvF',st.ch,'pinch',true);say(pick(SL.pinch||[]))}if(!pr&&pinchRu)face('#pvF',st.ch,'normal',true);
-      pinchMe=pm;pinchRu=pr;BGM.rate(pm?1.18:1)}
+      pinchMe=pm;pinchRu=pr;BGM.rate(pm?1.06:1)}
     me.draw();ru.draw();raf=requestAnimationFrame(loop)}
   raf=requestAnimationFrame(loop);BGM.start(si===STAGES.length-1?'boss':'battle');
   padUI($('#pvs'),me);
@@ -894,7 +916,7 @@ function battle(si){
       REC.maxChain=Math.max(REC.maxChain,me.maxChain);saveRec();
       const S=SC.stages[si]||{};
       scene(win?S.win:S.lose,{opp:st.ch,bg:st.bg},()=>battleResult(si,win,first,me))},1700)}
-  if(location.search.includes('debug'))window.__pvs={me,ru,P};
+  if(location.search.includes("debug"))window.__pvs={me,ru,P,ai};
 }
 function battleResult(si,win,first,me){
   if(win&&first&&si===STAGES.length-1&&!REC.seenEpi){REC.seenEpi=true;saveRec();return scene(SC.epilogue,{bg:'top'},()=>ending(allClear))}
@@ -948,7 +970,7 @@ function endless(){
      <div class="stat sm"><span>れんさ</span><b id="eC">1</b></div>
      <div class="stat sm"><span>じかん</span><b id="eT">0:00</b></div></div></div>
    ${CTRL_HTML}</div>`;
-  const avail=Math.min(body.clientWidth,440)-96,cs=Math.floor(Math.min(avail/6,(viewH()-330)/12));
+  const avail=Math.min(body.clientWidth,440)-96,cs=Math.max(16,Math.floor(Math.min(avail/6,(viewH()-330)/12)));
   const level=el=>Math.min(20,1+Math.floor(el/30));
   const speed=el=>.12+(level(el)-1)*.045;
   let ft=0;const face=(ex,hold)=>{if(ended&&!hold)return;$('#eF').innerHTML=charHTML(id,ex);clearTimeout(ft);if(!hold)ft=setTimeout(()=>{if(!ended)$('#eF').innerHTML=charHTML(id,pinch?'pinch':'normal')},1500)};
@@ -960,7 +982,7 @@ function endless(){
     onLose:()=>end()});
   function loop(t){if(ended)return;const dt=Math.min(.05,(t-t0)/1000);t0=t;
     if(!paused&&!ready)cd(dt);
-    else if(!paused){me.step(dt);const pm=me.high(9);if(pm&&!pinch){face('pinch',true);say(pick(HL.pinch||[]))}if(!pm&&pinch)face('normal',true);pinch=pm;BGM.rate(pm?1.18:1)}
+    else if(!paused){me.step(dt);const pm=me.high(9);if(pm&&!pinch){face('pinch',true);say(pick(HL.pinch||[]))}if(!pm&&pinch)face('normal',true);pinch=pm;BGM.rate(pm?1.06:1)}
     me.draw();$('#eS').textContent=score.toLocaleString();$('#eL').textContent=level(me.elapsed);$('#eC').textContent=me.maxChain;$('#eT').textContent=fmtTime(me.elapsed);
     raf=requestAnimationFrame(loop)}
   me.wait=true;const cd=countdown($('#pvs'),()=>{ready=true;me.wait=false});
@@ -1060,3 +1082,6 @@ function settings(){
 
 splash();
 </script>
+
+</body>
+</html>
