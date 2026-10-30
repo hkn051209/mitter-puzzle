@@ -9,6 +9,7 @@
 // index.html など ゲーム本体のファイルは さわりません。
 // ============================================================
 
+
 const firebaseConfig = {
   apiKey: "AIzaSyBq_sGnzIjjqI5Ng0HH6jfuXEaq6ATMxMU",
   authDomain: "mitter-puzzle.firebaseapp.com",
@@ -16,12 +17,15 @@ const firebaseConfig = {
   appId: "1:29089502139:web:0f6b8225d1ce7c272fea9e"
 };
 
+
 // ---- ここから下は 書きかえなくて OK です ----
 (function () {
   "use strict";
 
+
   var SDK = "https://www.gstatic.com/firebasejs/10.12.5/";
   var readyPromise = null;
+
 
   // Firebase の読みこみは 最初の submit / top のときだけ（遅延読みこみ）
   function ready() {
@@ -37,6 +41,7 @@ const firebaseConfig = {
     return readyPromise;
   }
 
+
   // 送る前に 形を整える（サーバー側のルールでも 同じチェックをしています）
   function clean(rec) {
     return {
@@ -50,6 +55,7 @@ const firebaseConfig = {
     };
   }
 
+
   // 記録を1件 保存する。失敗したら エラーを投げる（ゲーム側が エラー表示を出す）
   async function submit(rec) {
     var set = await ready();
@@ -58,6 +64,7 @@ const firebaseConfig = {
     data.ts = fs.serverTimestamp(); // 送った時刻（管理用。ランキングには出しません）
     await fs.addDoc(fs.collection(set.db, "scores"), data);
   }
+
 
   // スコアの高い順に limit件 返す
   async function top(limit) {
@@ -79,4 +86,32 @@ const firebaseConfig = {
   }
 
   window.HP_ONLINE = { submit: submit, top: top };
+
+  // スコアアタック用：保存先のコレクションだけが違う
+  async function submitTA(rec) {
+    var set = await ready();
+    var fs = set.fs;
+    var data = clean(rec);
+    data.ts = fs.serverTimestamp();
+    await fs.addDoc(fs.collection(set.db, "scores_ta"), data);
+  }
+  async function topTA(limit) {
+    var set = await ready();
+    var fs = set.fs;
+    var n = Math.max(1, Math.min(200, Math.floor(Number(limit) || 50)));
+    var q = fs.query(
+      fs.collection(set.db, "scores_ta"),
+      fs.orderBy("s", "desc"),
+      fs.limit(n)
+    );
+    var snap = await fs.getDocs(q);
+    var out = [];
+    snap.forEach(function (doc) {
+      var v = doc.data();
+      out.push({ n: v.n, s: v.s, c: v.c, k: v.k, t: v.t, h: v.h, d: v.d });
+    });
+    return out;
+  }
+  window.HP_ONLINE.submitTA = submitTA;
+  window.HP_ONLINE.topTA = topTA;
 })();
