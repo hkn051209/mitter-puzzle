@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101833">
 <title>みったーパズル</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="みったーパズル">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
 </head>
 <body>
@@ -192,7 +200,7 @@ textarea.code{width:100%;min-height:80px;resize:vertical;-webkit-user-select:tex
 .roll-in{position:absolute;left:0;right:0;top:100%;z-index:1;display:flex;flex-direction:column;align-items:center;gap:34px;padding:0 20px 40px;text-align:center;animation:rollup linear forwards}
 .roll-in h3{margin:0;font-size:13px;letter-spacing:.35em;color:var(--peach)}
 .roll-c{display:flex;flex-direction:column;align-items:center;gap:4px}.roll-c .ch{height:190px}
-.roll-c b{font:500 22px var(--display);color:var(--star)}.roll-c span{font-size:12px;color:var(--muted)}
+.roll-c b{font:500 22px var(--display);color:var(--star)}.roll-c span{font-size:14px;color:#dfe6ff;letter-spacing:.08em}
 .roll-t{font:500 16px/1.9 var(--display);color:#fff}
 .roll-end{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding-top:36px;background:#101833 50% 50%/cover no-repeat;animation:opin 1.6s ease-out both}
 .roll-end .clear-ttl{text-shadow:0 2px 12px rgba(0,0,0,.7)}.roll-end .note{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.8)}
@@ -215,7 +223,7 @@ textarea.code{width:100%;min-height:80px;resize:vertical;-webkit-user-select:tex
 凛花：優勝したら一番星に願いが届く。おれの願いは──
 凛花：好きを、堂々と好きって言える自分になること！
 
-### ステージ1：そうた＆北方
+### ステージ1：北方&そうた
 [たいせんまえ]
 ナレ：最初の相手は、そうたと北方さんの友達コンビ。
 北方：おう、挑戦者か！　腕が鳴るぜ！
@@ -356,33 +364,33 @@ textarea.code{width:100%;min-height:80px;resize:vertical;-webkit-user-select:tex
 [たいせんちゅう：まけ]
 ゴゴ：風子さんが負けるなんて……。
 
-### ステージ6：オ゙崎
+### ステージ6：オ゛崎
 [たいせんまえ]
-ナレ：最後の相手は、ダンディな紳士、オ゙崎。
-オ゙崎：やあ、待っていましたよ。小さな挑戦者くん。
+ナレ：最後の相手は、ダンディな紳士、オ゛崎。
+オ゛崎：やあ、待っていましたよ。小さな挑戦者くん。
 凛花：ひ、人と目を合わせるの苦手で……。
-オ゙崎：ふふ、パネルを前にすると別人ですな。
-オ゙崎：私のダンディズム、しかとご覧あれ。
+オ゛崎：ふふ、パネルを前にすると別人ですな。
+オ゛崎：私のダンディズム、しかとご覧あれ。
 凛花：……行きます。最後の戦いだ！
 [かったあと]
-オ゙崎：お見事。完敗ですよ、完敗。
+オ゛崎：お見事。完敗ですよ、完敗。
 凛花：やった……！　全員に勝てた……！
-オ゙崎：素晴らしい。星があなたに微笑んでいます。
+オ゛崎：素晴らしい。星があなたに微笑んでいます。
 [まけたあと]
-オ゙崎：ふふ、まだまだ若いですね。
+オ゛崎：ふふ、まだまだ若いですね。
 凛花：ダンディ、強すぎる……。
 [たいせんちゅう：こうげき]
-オ゙崎：おじゃまぐもを、優雅にどうぞ。
-オ゙崎：雲のワルツ、始まりますよ。
-オ゙崎：紳士の一手、受けてみなさい。
+オ゛崎：おじゃまぐもを、優雅にどうぞ。
+オ゛崎：雲のワルツ、始まりますよ。
+オ゛崎：紳士の一手、受けてみなさい。
 [たいせんちゅう：ピンチ]
-オ゙崎：おや、これはいけませんね。
-オ゙崎：紳士は慌てません……少し慌てます。
-オ゙崎：優雅さが、崩れてしまう……！
+オ゛崎：おや、これはいけませんね。
+オ゛崎：紳士は慌てません……少し慌てます。
+オ゛崎：優雅さが、崩れてしまう……！
 [たいせんちゅう：かち]
-オ゙崎：勝ちましたよ。ダンディですから。
+オ゛崎：勝ちましたよ。ダンディですから。
 [たいせんちゅう：まけ]
-オ゙崎：負けもまた、ダンディズムですな。
+オ゛崎：負けもまた、ダンディズムですな。
 
 ### 主人公のたいせんちゅうのセリフ
 [こうげき]
@@ -402,7 +410,7 @@ textarea.code{width:100%;min-height:80px;resize:vertical;-webkit-user-select:tex
 ナレ：星屑タワーの頂上に、一番星が輝いた。
 凛花：一番星さん、おれの願いを聞いてください！
 凛花：好きを、堂々と好きって言えますように！
-オ゙崎：小さな挑戦者の願いは、空に広がった。
+オ゛崎：小さな挑戦者の願いは、空に広がった。
 そうた：……悪くない願いだ。
 北方：凛花、また海にも来いよ！
 だぬ：素敵な願いだね、凛花。
@@ -441,7 +449,7 @@ let actx=null;
 const TITLE_ART=['img/title1.webp','img/title2.webp','img/title3.webp','img/title4.webp','img/title5.webp'];
 const IMG={menu:'img/menu.webp',bg:'img/arena.webp',g:'img/panel-g.webp',logo:'img/logo.webp',tower:'img/tower.webp',top:'img/top.webp',ending:'img/ending.webp'};
 /* BGM：場面ごとに曲を分けられる。書いていない場面は battle の曲を使う。iPhoneでも鳴るように mp3 */
-const AUDIO={battle:'audio/battle.mp3',boss:'audio/boss.mp3',endless:'audio/endless.mp3',title:'audio/title.mp3'};   // 1 対戦／2 ボス（オ゙崎）／3 エンドレス／4 タイトル・会話
+const AUDIO={battle:'audio/battle.mp3',boss:'audio/boss.mp3',endless:'audio/endless.mp3',title:'audio/title.mp3'};   // 1 対戦／2 ボス（オ゛崎）／3 エンドレス／4 タイトル・会話
 /* iPhone の古いOSでも盤面の角丸が描けるように */
 if(window.CanvasRenderingContext2D&&!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(+r||0,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
 
@@ -453,12 +461,12 @@ const EXPR_JA={'ノーマル':'normal','ピンチ':'pinch','こうげき':'attac
 const imgs=id=>Object.fromEntries(EXPR.map(e=>[e,`img/chars/${id}_${e}.webp`]));
 const CHARS={   // キー（hero, mint…）はランキングの記録にも使うので変えない。名前と絵だけ変える
   hero:{name:'凛花',color:'#ffd76a',img:imgs('hero')},
-  mint:{name:'そうた＆北方',alias:['そうた','北方','北方さん'],pair:true,color:'#7fa0e8',color2:'#2e3a6e',img:imgs('mint')},
+  mint:{name:'北方&そうた',alias:['そうた','北方','北方さん','そうた＆北方'],pair:true,color:'#7fa0e8',color2:'#2e3a6e',img:imgs('mint')},
   sora:{name:'だぬこぶペア',alias:['だぬ','こぶ太郎','だぬこぶ'],pair:true,color:'#ff9fb6',color2:'#ffd76a',img:imgs('sora')},
   coco:{name:'せみぬペア',alias:['せみちゃん','みぬさん','せみぬ'],pair:true,color:'#9b8cff',color2:'#5b3fa6',img:imgs('coco')},
   pair:{name:'屋上組',alias:['兎水','玖狼'],pair:true,color:'#d8e6ff',color2:'#cdb9ff',img:imgs('pair')},
   kuro:{name:'ゴゴ&風子',alias:['ゴゴ','風子さん','風子','ゴゴ＆風子'],pair:true,color:'#8fe0f4',color2:'#9ff0cf',img:imgs('kuro')},
-  king:{name:'オ゙崎',color:'#e8e2d6',img:imgs('king')},
+  king:{name:'オ゛崎',alias:['オ゙崎'],color:'#e8e2d6',img:imgs('king')},
 };
 const HERO='hero';
 
@@ -773,14 +781,18 @@ function intro(done){
   stopGame=()=>clearTimeout(tm);next();
 }
 
-/* ===== エンディング（スタッフロール） ===== */
+/* ===== エンディング（スタッフロール） =====
+   エンディングに出す名前：[大きい名前, 下の小さい名前] */
+const ENDING_CAST={hero:['凛花'],mint:['北方&そうた','北方　そうた'],sora:['だぬこぶペア','だぬ　こぶ太郎'],coco:['せみぬペア','みぬ　せみ'],
+  pair:['屋上組','玖狼　兎水'],kuro:['ゴゴ&風子','風子　ゴゴ'],king:['オ゛崎']};
 function ending(done){
   const body=shell('','スキップ ▶▶',done);BGM.title();
   const cast=[HERO,...STAGES.map(s=>s.ch)];
   body.innerHTML=`<div class="roll" id="roll" style="background-image:url(${IMG.ending})"><div class="roll-in" id="rollIn">
     <h1 class="logo-img"><img src="${IMG.logo}" alt="みったーパズル" draggable="false"></h1>
     <h3>キャスト</h3>
-    ${cast.map(id=>{const c=CHARS[id];return `<div class="roll-c">${charHTML(id,'win')}<b>${esc(c.name)}</b>${c.alias?`<span>${esc(c.alias.filter(a=>!/さん$|ペア|＆|&/.test(a)||a==='風子さん').slice(0,2).join(' ・ '))}</span>`:''}</div>`}).join('')}
+    ${cast.map(id=>{const c=CHARS[id],cr=ENDING_CAST[id]||[c.name];return `<div class="roll-c">${charHTML(id,'win')}<b>${esc(cr[0])}</b>${cr[1]?`<span>${esc(cr[1])}</span>`:''}</div>`}).join('')}
+    <div class="roll-t" style="font-size:13px;color:var(--muted)">※敬称略</div>
     <div class="roll-t">ここまで あそんでくれて<br>ありがとう！</div></div></div>`;
   const inner=$('#rollIn');inner.style.animationDuration=Math.max(24,cast.length*4.2)+'s';
   let fin=false;const finish=()=>{if(fin)return;fin=true;$('#roll').insertAdjacentHTML('beforeend',`<div class="roll-end" style="background-image:url(${IMG.ending})"><p class="clear-ttl">おしまい</p><p class="note">タップで つづく</p></div>`)};
@@ -842,7 +854,7 @@ function stageIntro(i){const S=SC.stages[i];scene(S?S.before:[],{opp:STAGES[i].c
 function scene(lines,ctx,done){
   lines=(lines||[]).filter(l=>l&&l.text);if(!lines.length)return done();
   const body=shell('','とばす',done);$('#gBack').textContent='スキップ ▶▶';BGM.title();
-  const opp=ctx.opp||lines.map(l=>l.ch).find(c=>c&&c!==HERO)||null;
+  let opp=ctx.opp||lines.map(l=>l.ch).find(c=>c&&c!==HERO)||null;   // 右に出す相手（しゃべった人に切りかわる）
   body.innerHTML=`<div class="scene" id="scn" style="background-image:url(${IMG[ctx.bg]||IMG.bg})">
     <div class="sc-ch sc-l" id="scL">${charHTML(HERO)}</div>
     ${opp?`<div class="sc-ch sc-r${CHARS[opp].pair?' wide':''}" id="scR">${charHTML(opp)}</div>`:''}
@@ -853,7 +865,7 @@ function scene(lines,ctx,done){
     $('#scN').hidden=!l.who;$('#scN').textContent=l.who||'';
     const L=$('#scL'),R=$('#scR');
     if(who===HERO){L.innerHTML=charHTML(HERO,l.expr);L.className='sc-ch sc-l talk';if(R)R.classList.add('dim');}
-    else if(who&&who===opp&&R){R.innerHTML=charHTML(opp,l.expr);R.classList.remove('dim');R.classList.add('talk');L.className='sc-ch sc-l dim'}
+    else if(who&&CHARS[who]&&R){if(who!==opp){opp=who;R.classList.toggle('wide',!!CHARS[who].pair&&!CHARS[who].img)}R.innerHTML=charHTML(opp,l.expr);R.classList.remove('dim');R.classList.add('talk');L.className='sc-ch sc-l dim'}
     else{L.className='sc-ch sc-l'+(l.who?' dim':'');if(R)R.classList.remove('talk','dim')}
     full=l.text;let k=0;const T=$('#scT');T.textContent='';$('#scNx').hidden=true;clearInterval(typing);
     typing=setInterval(()=>{k++;T.textContent=full.slice(0,k);if(k%3===1)se('talk');if(k>=full.length){clearInterval(typing);typing=0;$('#scNx').hidden=false}},32)};
