@@ -497,7 +497,7 @@ Object.assign(CHARS,{
   hikono:{name:'ひこの',extra:true,img:imgs('hikono')},
   washimo:{name:'わしも',extra:true,img:imgs('washimo')},
   soutas:{name:"そうた's",extra:true,img:imgs('soutas')},souta2:{name:'そうた',of:'soutas',img:imgs('souta2')},soutashota:{name:'そうたしょた',of:'soutas',img:imgs('soutashota')},
-  tofukita:{name:'とふきたペア',extra:true,img:imgs('tofukita')},tofu:{name:'とーふ',of:'tofukita',img:imgs('tofu')},kitakata2:{name:'北方',of:'tofukita',img:imgs('kitakata2')},
+  tofukita:{name:'とふきたペア',extra:true,img:imgs('tofukita')},tofu:{name:'とーふ',of:'tofukita',img:imgs('tofu_v2')},kitakata2:{name:'北方',of:'tofukita',img:imgs('kitakata2_v2')},   // 絵の入れかえ後は 新しいファイル名（古い絵が残らないように）
   kitakata:{name:'北方',of:'mint',img:imgs('kitakata')},souta:{name:'そうた',of:'mint',img:imgs('souta')},
   danu:{name:'だぬ',of:'sora',img:imgs('danu')},kobu:{name:'こぶ太郎',of:'sora',img:imgs('kobu')},
   minu:{name:'みぬ',of:'coco',img:imgs('minu')},semi:{name:'せみ',of:'coco',img:imgs('semi')},
@@ -864,7 +864,7 @@ function ending(done){
 }
 
 /* タイトルの「おしらせ」。書きかえるときはここ */
-const VERSION='11/04b';   // 直したら ここを かえる（どの版が開いているか 見分けるため）
+const VERSION='11/04c';   // 直したら ここを かえる（どの版が開いているか 見分けるため）
 let NOTICE=['あくまでお遊びです','他キャラも実装する予定！！','勝手にお借りしてます💦💦'];
 /* おしらせは notice.txt（index.html と同じ場所）から読む。1行が1項目、# で始まる行は無視。
    読めなかったときは 上の NOTICE を出す */
