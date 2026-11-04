@@ -492,9 +492,11 @@ const CHARS={   // キー（hero, mint…）はランキングの記録にも使
 const HERO='hero';
 /* エンドレス・スコアアタック用のキャラ（ストーリーには出ない）。
    ペアは「ペアで」か「1人ずつ」をえらべる。of＝どのペアの1人か。extra＝はじめから えらべる */
-const SOLO={tofukita:['tofu','kitakata2'],mint:['kitakata','souta'],sora:['danu','kobu'],coco:['minu','semi'],pair:['kurou','usami'],kuro:['fuko','gogo']};
+const SOLO={tofukita:['tofu','kitakata2'],soutas:['souta2','soutashota'],mint:['kitakata','souta'],sora:['danu','kobu'],coco:['minu','semi'],pair:['kurou','usami'],kuro:['fuko','gogo']};
 Object.assign(CHARS,{
   hikono:{name:'ひこの',extra:true,img:imgs('hikono')},
+  washimo:{name:'わしも',extra:true,img:imgs('washimo')},
+  soutas:{name:"そうた's",extra:true,img:imgs('soutas')},souta2:{name:'そうた',of:'soutas',img:imgs('souta2')},soutashota:{name:'そうたしょた',of:'soutas',img:imgs('soutashota')},
   tofukita:{name:'とふきたペア',extra:true,img:imgs('tofukita')},tofu:{name:'とーふ',of:'tofukita',img:imgs('tofu')},kitakata2:{name:'北方',of:'tofukita',img:imgs('kitakata2')},
   kitakata:{name:'北方',of:'mint',img:imgs('kitakata')},souta:{name:'そうた',of:'mint',img:imgs('souta')},
   danu:{name:'だぬ',of:'sora',img:imgs('danu')},kobu:{name:'こぶ太郎',of:'sora',img:imgs('kobu')},
@@ -862,8 +864,15 @@ function ending(done){
 }
 
 /* タイトルの「おしらせ」。書きかえるときはここ */
-const VERSION='11/04';   // 直したら ここを かえる（どの版が開いているか 見分けるため）
-const NOTICE=['あくまでお遊びです','他キャラも実装する予定！！','勝手にお借りしてます💦💦'];
+const VERSION='11/04b';   // 直したら ここを かえる（どの版が開いているか 見分けるため）
+let NOTICE=['あくまでお遊びです','他キャラも実装する予定！！','勝手にお借りしてます💦💦'];
+/* おしらせは notice.txt（index.html と同じ場所）から読む。1行が1項目、# で始まる行は無視。
+   読めなかったときは 上の NOTICE を出す */
+const noticeHTML=()=>NOTICE.map(t=>`<li>${esc(t)}</li>`).join('');
+async function loadNotice(){try{const r=await fetch('notice.txt',{cache:'no-store'});if(!r.ok)return;
+  const lines=(await r.text()).split(/\r?\n/).map(x=>x.trim()).filter(x=>x&&!x.startsWith('#')).slice(0,10);
+  if(lines.length){NOTICE=lines;const ul=$('#noticeList');if(ul)ul.innerHTML=noticeHTML()}}catch(e){}}
+loadNotice();
 function title(){
   BGM.title();BGM.rate(1);
   const body=shell('','　',()=>{});$('#gBack').style.visibility='hidden';
@@ -877,7 +886,7 @@ function title(){
     <button class="menu-b" id="tRank">ランキング<small>${REC.best[0]?`エンドレス じこベスト ${REC.best[0].s.toLocaleString()}てん`:'エンドレスと スコアアタック'}</small></button>
    </div>
    <div class="menu-row"><button class="sbtn" id="tSet">せってい・ひきつぎ</button><button class="sbtn" id="tHow">あそびかた</button></div>
-   <div class="notice"><h3>おしらせ</h3><ul>${NOTICE.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>
+   <div class="notice"><h3>おしらせ</h3><ul id="noticeList">${noticeHTML()}</ul></div>
    <p class="note">ver ${VERSION}</p>
    </div>`;
   $('#tStory').onclick=()=>{unlockAudio();se('tap');story()};
@@ -1057,7 +1066,7 @@ function closeOverlay(){const o=$('#ovl');if(o)o.remove()}
 const MODES={end:{n:'エンドレス',d:'てんじょうまで ひたすら けす'},ta:{n:'スコアアタック',d:'2分間で どれだけ かせげるか'}};
 const TA_SEC=120;
 const unlocked=id=>{const c=CHARS[id];if(!c)return false;if(id===HERO||c.extra)return true;const b=baseOf(id);if(CHARS[b]&&CHARS[b].extra)return true;return STAGES.some((s,i)=>s.ch===b&&i<REC.prog)};
-const PICK_IDS=()=>[HERO,'hikono','tofukita',...STAGES.map(s=>s.ch)];   // えらぶ画面にならべる順（1人ずつは ペアの中で えらぶ）
+const PICK_IDS=()=>[HERO,'hikono','washimo','tofukita','soutas',...STAGES.map(s=>s.ch)];   // えらぶ画面にならべる順（1人ずつは ペアの中で えらぶ）
 const bestList=m=>m==='ta'?REC.bestTA:REC.best;
 const SHARE_URL='https://hkn051209.github.io/mitter-puzzle/';
 async function shareText(text,btn){
@@ -1087,6 +1096,12 @@ const CHAIN_BONUS=[0,0,50,80,150,300,400,500,700,900,1100,1300,1500,1800];
    ストーリーに いないキャラは ここに書く。「名前：セリフ」と書くと、1人ずつ えらんだときに その人だけが言う */
 const EXTRA_LINES={
   hikono:{attack:['いっけー！','まとめて どうぞ！','ふふ、きれいに きえた'],pinch:['ちょっと まって…！','まだまだ いけるもん','あわわ…'],win:['やったね！'],lose:['くやしい〜！']},
+  // わしも：ミステリアスな男性
+  washimo:{attack:['……ふふ、見えていたよ。','運命は、もう決まっている。','さあ、沈んでおいで。'],pinch:['……おや、おもしろい。','まだ、終わりではない。','……少し、遊びすぎたかな。'],win:['……すべて、想定どおり。'],lose:['……これもまた、ひとつの答え。']},
+  // そうた's：そうた（クールな男性）と そうたしょた（かわいい男の子）。同じ人なので 名前で呼び合わない
+  soutas:{attack:['そうた：……消えてもらう。','そうた：静かに、終わらせる。','そうたしょた：えいっ！ とどけー！','そうたしょた：ぼくだって できるもん！'],
+    pinch:['そうた：……少し、厄介だな。','そうた：焦る必要はない。','そうたしょた：わわっ、いっぱい きたよぉ…！','そうたしょた：まだ まけないもん…！'],
+    win:['そうた：……悪くない。','そうたしょた：やったぁ！ ほめてほめて！'],lose:['そうた：……次は、ない。','そうたしょた：うぅ…くやしいよぉ…']},
   // とーふ：クールでミステリアス。北方：豪快。呼び方は「とーふ」「北方」
   tofukita:{attack:['とーふ：……悪いね、計算どおり。','とーふ：静かに、沈んでもらうよ。','北方：とーふ、見てろよ！ 大波いくぞー！','北方：どんどん送ってやるぜ！'],
     pinch:['とーふ：……ふうん。おもしろくなってきた。','とーふ：北方、少しだけ 任せる。','北方：おいおい、まずいぞ とーふ！','北方：まだまだ 沈まねえ！'],
@@ -1097,7 +1112,7 @@ const GENERIC_LINES={attack:['いけっ！','それっ！'],pinch:['まずい…
 const SOLO_LINES={};
 function endlessLines(id){
   const out={attack:[],pinch:[],win:[],lose:[]};if(id===HERO)return SC.hero;
-  const base=baseOf(id),solo=base!==id?CHARS[id].name:null,mine=w=>w&&solo&&w.startsWith(solo);
+  const base=baseOf(id),solo=base!==id?CHARS[id].name:null,mine=w=>w&&solo&&(w===solo||w.replace(/(さん|ちゃん|くん)$/,'')===solo);
   const si=STAGES.findIndex(s=>s.ch===base),st=si>=0&&SC.stages[si];
   for(const k in out){let list=[];
     if(st){list=st.b[k].map((t,i)=>({t,w:st.bw[k][i]}))}
