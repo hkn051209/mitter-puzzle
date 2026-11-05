@@ -225,6 +225,27 @@ textarea.code{width:100%;min-height:80px;resize:vertical;-webkit-user-select:tex
 .ghost.on{border-color:var(--star);color:var(--star)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:30;background:rgba(16,24,51,.95);color:var(--ink);border:1px solid var(--star);border-radius:999px;padding:8px 18px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
 .toast.show{opacity:1;transform:translate(-50%,0)}
+/* スチル */
+.stills{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.st-c{position:relative;display:flex;flex-direction:column;gap:3px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:4px;overflow:hidden;text-align:center}
+.st-c img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;display:block}
+.st-c span{font-size:10px;line-height:1.3;color:var(--ink)}
+.st-c.lock img{filter:blur(10px) brightness(.45)}.st-c.lock span{color:var(--muted)}
+.st-c.lock i{position:absolute;top:30%;left:0;right:0;font:500 34px var(--display);color:var(--muted);font-style:normal}
+.achs{display:flex;flex-direction:column;gap:6px}
+.ach{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;opacity:.7}
+.ach.on{opacity:1;border-color:var(--star)}.ach>b{font-size:20px;color:var(--star)}.ach>div{flex:1;min-width:0;display:flex;flex-direction:column}
+.ach strong{font:500 14px var(--display)}.ach small{font-size:11px;color:var(--muted)}.ach em{font-style:normal;font-size:11px;color:var(--peach);text-align:right}
+.ach-pop img{width:min(60vw,240px);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.stv{flex-direction:column;gap:10px;padding:16px}.stv>img{max-width:100%;max-height:78vh;border-radius:12px;object-fit:contain}
+.stv-bar{display:flex;align-items:center;gap:14px}.stv-bar b{font:500 16px var(--display);min-width:7em;text-align:center}
+.stv-x{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;background:rgba(16,24,51,.8)}
+body.lefty .pnl-b{flex-direction:row-reverse}
+.rk-sep{width:1px;background:var(--line);margin:0 2px}
+.rk-sel{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--muted)}
+.rk-sel select{font:inherit;font-size:14px;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;max-width:70%}
+.rk-ch{display:block;font-size:10px;color:var(--muted)}
+#rMyRank b{color:var(--star);font-weight:500}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -496,6 +517,8 @@ const SOLO={tofukita:['tofu','kitakata2'],soutas:['souta2','soutashota'],mint:['
 Object.assign(CHARS,{
   hikono:{name:'ひこの',extra:true,img:imgs('hikono')},
   washimo:{name:'わしも',extra:true,img:imgs('washimo')},
+  medjed:{name:'メジェド',extra:true,img:imgs('medjed')},tainu:{name:'たいぬ',extra:true,img:imgs('tainu')},
+  semimofu:{name:'せみ（もふ）',extra:true,img:imgs('semimofu')},kurouf:{name:'玖狼（女性）',extra:true,img:imgs('kurouf')},
   soutas:{name:"そうた's",extra:true,img:imgs('soutas')},souta2:{name:'そうた',of:'soutas',img:imgs('souta2')},soutashota:{name:'そうたしょた',of:'soutas',img:imgs('soutashota')},
   tofukita:{name:'とふきたペア',extra:true,img:imgs('tofukita')},tofu:{name:'とーふ',of:'tofukita',img:imgs('tofu_v2')},kitakata2:{name:'北方',of:'tofukita',img:imgs('kitakata2_v2')},   // 絵の入れかえ後は 新しいファイル名（古い絵が残らないように）
   kitakata:{name:'北方',of:'mint',img:imgs('kitakata')},souta:{name:'そうた',of:'mint',img:imgs('souta')},
@@ -574,10 +597,10 @@ const SC=parseScenario(document.getElementById('SCENARIO').textContent);
 
 /* ---- 記録（この端末のブラウザの中） ---- */
 const REC_KEY='hoshipanel-v2';
-const REC_DEF=()=>({name:'',se:.8,bgm:true,prog:0,fails:[0,0,0,0,0,0],wins:0,losses:0,seenPro:false,seenOp:false,seenEpi:false,best:[],endChar:HERO,maxChain:1,diff:'normal',hard:false,hprog:0,hfails:[0,0,0,0,0,0],bestTA:[],vib:true,tut:false});
+const REC_DEF=()=>({name:'',se:.8,bgm:true,prog:0,fails:[0,0,0,0,0,0],wins:0,losses:0,seenPro:false,seenOp:false,seenEpi:false,best:[],endChar:HERO,maxChain:1,diff:'normal',hard:false,hprog:0,hfails:[0,0,0,0,0,0],bestTA:[],vib:true,tut:false,ach:{},st:{plays:0,cleared:0,chars:[]}});
 function loadRec(){try{return Object.assign(REC_DEF(),JSON.parse(localStorage.getItem(REC_KEY)||'{}'))}catch(e){return REC_DEF()}}
 function saveRec(){try{localStorage.setItem(REC_KEY,JSON.stringify(REC))}catch(e){}}
-let REC=loadRec();
+let REC=loadRec();REC.st=Object.assign({plays:0,cleared:0,chars:[]},REC.st||{});REC.ach=REC.ach||{};
 
 /* ---- コード（記録コード・ひきつぎコード） ---- */
 const b64e=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -819,6 +842,7 @@ async function copyText(text,btn,box){try{await navigator.clipboard.writeText(te
 const fmtTime=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const viewH=()=>Math.min(innerHeight,document.documentElement.clientHeight||innerHeight);
+const applyHand=()=>document.body.classList.toggle('lefty',!!REC.lefty);
 const playerName=()=>REC.name||'あなた';
 
 /* ===== タイトル ===== */
@@ -864,7 +888,7 @@ function ending(done){
 }
 
 /* タイトルの「おしらせ」。書きかえるときはここ */
-const VERSION='11/04c';   // 直したら ここを かえる（どの版が開いているか 見分けるため）
+const VERSION='11/05c';   // 直したら ここを かえる（どの版が開いているか 見分けるため）
 let NOTICE=['あくまでお遊びです','他キャラも実装する予定！！','勝手にお借りしてます💦💦'];
 /* おしらせは notice.txt（index.html と同じ場所）から読む。1行が1項目、# で始まる行は無視。
    読めなかったときは 上の NOTICE を出す */
@@ -885,6 +909,7 @@ function title(){
     <div class="menu-2"><button class="menu-b" id="tEnd">エンドレス<small>てんじょうまで けす</small></button><button class="menu-b" id="tTA">スコアアタック<small>2分間の しょうぶ</small></button></div>
     <button class="menu-b" id="tRank">ランキング<small>${REC.best[0]?`エンドレス じこベスト ${REC.best[0].s.toLocaleString()}てん`:'エンドレスと スコアアタック'}</small></button>
    </div>
+   <div class="menu-2"><button class="menu-b" id="tStill">スチル<small>${achDone()}/${ACH.length} じっせき</small></button><button class="menu-b" id="tZukan">キャラずかん<small>キャラと セリフ</small></button></div>
    <div class="menu-row"><button class="sbtn" id="tSet">せってい・ひきつぎ</button><button class="sbtn" id="tHow">あそびかた</button></div>
    <div class="notice"><h3>おしらせ</h3><ul id="noticeList">${noticeHTML()}</ul></div>
    <p class="note">ver ${VERSION}</p>
@@ -895,6 +920,8 @@ function title(){
   $('#tRank').onclick=()=>{se('tap');ranking()};
   $('#tSet').onclick=()=>{se('tap');settings()};
   $('#tHow').onclick=()=>{se('tap');howto()};
+  $('#tStill').onclick=()=>{se('tap');stills()};$('#tZukan').onclick=()=>{se('tap');zukan()};
+  achCheck();
 }
 function howto(){
   const body=shell('あそびかた','もどる',title);
@@ -1015,7 +1042,8 @@ function battle(si){
   raf=requestAnimationFrame(loop);BGM.start(si===STAGES.length-1?'boss':'battle');
   padUI($('#pvs'),me);
   const setPause=v=>{paused=me.paused=v;if(v)BGM.pause();else{t0=performance.now();BGM.resume()}};
-  function pauseMenu(){if(ended)return;setPause(true);overlay(`<h3>ていし ちゅう</h3><button class="primary" data-k="go">つづける</button><button class="sbtn" data-k="retry">さいしょから</button><button class="ghost" data-k="quit">やめて もどる</button>`,k=>{
+  function pauseMenu(){if(ended)return;setPause(true);overlay(`<h3>ていし ちゅう</h3><button class="primary" data-k="go">つづける</button><button class="sbtn" data-k="hand">ボタンを 左右いれかえ</button><button class="sbtn" data-k="retry">さいしょから</button><button class="ghost" data-k="quit">やめて もどる</button>`,k=>{
+    if(k==='hand'){REC.lefty=!REC.lefty;saveRec();applyHand();setTimeout(pauseMenu,0);return}
     if(k==='go')setPause(false);if(k==='retry'){cleanup();battle(si)}if(k==='quit'){cleanup();story()}})}
   const onVis=()=>{if(document.hidden&&!paused&&!ended)pauseMenu()};document.addEventListener('visibilitychange',onVis);
   function cleanup(){ended=true;cancelAnimationFrame(raf);BGM.rate(1);document.removeEventListener('visibilitychange',onVis);closeOverlay()}
@@ -1026,7 +1054,7 @@ function battle(si){
     setTimeout(()=>{cleanup();
       const fails=failsNow(),first=win&&si===progNow();
       if(win){REC.wins++;fails[si]=0;if(first){if(H)REC.hprog=si+1;else REC.prog=si+1}}else{REC.losses++;fails[si]++}
-      REC.maxChain=Math.max(REC.maxChain,me.maxChain);saveRec();
+      REC.maxChain=Math.max(REC.maxChain,me.maxChain);REC.st.cleared+=me.cleared;saveRec();
       const S=SC.stages[si]||{};
       scene(win?S.win:S.lose,{opp:st.ch,bg:st.bg},()=>battleResult(si,win,first,me,H))},1700)}
   if(location.search.includes("debug"))window.__pvs={me,ru,P,ai};
@@ -1045,6 +1073,7 @@ function battleResult(si,win,first,me,H){
   if($('#rNext'))$('#rNext').onclick=()=>{se('tap');stageIntro(si+1)};
   if($('#rAgain'))$('#rAgain').onclick=()=>{se('tap');battle(si)};
   $('#rList').onclick=()=>{se('tap');story()};
+  achCheck();
 }
 function allClear(hard){
   const body=shell('','タイトルへ',title);$('#gBack').style.visibility='hidden';
@@ -1053,6 +1082,7 @@ function allClear(hard){
    <div class="r-btns"><button class="primary" id="cShare">けっかを シェア</button><button class="sbtn" id="cEnd">エンドレスへ</button><button class="sbtn" id="cTop">タイトルへ</button></div><p class="msg" id="cMsg"></p></div>`;
   $('#cShare').onclick=e=>shareText(`みったーパズルの${hard?'ハードモード':'ストーリー'}を クリアしたよ！`,e.target);
   $('#cEnd').onclick=()=>{se('tap');endlessPick('end')};$('#cTop').onclick=()=>{se('tap');title()};
+  achCheck();
 }
 
 /* ---- ていし画面 ---- */
@@ -1066,7 +1096,7 @@ function closeOverlay(){const o=$('#ovl');if(o)o.remove()}
 const MODES={end:{n:'エンドレス',d:'てんじょうまで ひたすら けす'},ta:{n:'スコアアタック',d:'2分間で どれだけ かせげるか'}};
 const TA_SEC=120;
 const unlocked=id=>{const c=CHARS[id];if(!c)return false;if(id===HERO||c.extra)return true;const b=baseOf(id);if(CHARS[b]&&CHARS[b].extra)return true;return STAGES.some((s,i)=>s.ch===b&&i<REC.prog)};
-const PICK_IDS=()=>[HERO,'hikono','washimo','tofukita','soutas',...STAGES.map(s=>s.ch)];   // えらぶ画面にならべる順（1人ずつは ペアの中で えらぶ）
+const PICK_IDS=()=>[HERO,'hikono','washimo','medjed','tainu','semimofu','kurouf','tofukita','soutas',...STAGES.map(s=>s.ch)];   // えらぶ画面にならべる順（1人ずつは ペアの中で えらぶ）
 const bestList=m=>m==='ta'?REC.bestTA:REC.best;
 const SHARE_URL='https://hkn051209.github.io/mitter-puzzle/';
 async function shareText(text,btn){
@@ -1096,6 +1126,14 @@ const CHAIN_BONUS=[0,0,50,80,150,300,400,500,700,900,1100,1300,1500,1800];
    ストーリーに いないキャラは ここに書く。「名前：セリフ」と書くと、1人ずつ えらんだときに その人だけが言う */
 const EXTRA_LINES={
   hikono:{attack:['いっけー！','まとめて どうぞ！','ふふ、きれいに きえた'],pinch:['ちょっと まって…！','まだまだ いけるもん','あわわ…'],win:['やったね！'],lose:['くやしい〜！']},
+  // メジェド：エジプトの神。カタカナで片言
+  medjed:{attack:['メジェド、ミテル。','オジャマ、オクル。','ビーム……デナイ。カワリニ、クモ。'],pinch:['ピンチ……チガウ。','メジェド、アワテナイ。','……ウエ、セマッテル。'],win:['メジェド、カッタ。'],lose:['……メジェド、ネル。']},
+  // たいぬ：「アオーン」と言う、テンション高い男
+  tainu:{attack:['アオーン！ いっくぜぇぇ！','まとめてドーン！ アオーン！','見たか！ アオォーン！'],pinch:['アオッ!? やっべぇ！','まだまだぁ！ アオーン！','うおお、くも多すぎだろ！'],win:['アオーーーン！！ 最高ーっ！'],lose:['アオ……ン……くやしいーっ！']},
+  // せみ（もふ）：せみぬペアのせみと同じ人。やわらかい敬語
+  semimofu:{attack:['もふっ……沈んでください。','送りますね、おじゃまぐも。','ふわっと、どうぞ。'],pinch:['……少し、困りましたね。','まだ、平気です。','もふ……あぶないです。'],win:['……よかったです。'],lose:['……今日は、ここまでですね。']},
+  // 玖狼（女性）：落ち着いた女性
+  kurouf:{attack:['焦らず、確実に。','ここは、もらうわね。','……これで、どうかしら。'],pinch:['慌てなくていい。','まだ立て直せる。','……少し、危ないわね。'],win:['ふふ、上出来ね。'],lose:['……次は、負けない。']},
   // わしも：ミステリアスな男性
   washimo:{attack:['……ふふ、見えていたよ。','運命は、もう決まっている。','さあ、沈んでおいで。'],pinch:['……おや、おもしろい。','まだ、終わりではない。','……少し、遊びすぎたかな。'],win:['……すべて、想定どおり。'],lose:['……これもまた、ひとつの答え。']},
   // そうた's：そうた（クールな男性）と そうたしょた（かわいい男の子）。同じ人なので 名前で呼び合わない
@@ -1158,7 +1196,8 @@ function endless(mode='end'){
   raf=requestAnimationFrame(loop);BGM.start('endless');
   padUI($('#pvs'),me);
   const setPause=v=>{paused=me.paused=v;if(v)BGM.pause();else{t0=performance.now();BGM.resume()}};
-  function pauseMenu(){if(ended)return;setPause(true);overlay(`<h3>ていし ちゅう</h3><p>スコア ${score.toLocaleString()}</p><button class="primary" data-k="go">つづける</button><button class="sbtn" data-k="retry">さいしょから</button><button class="ghost" data-k="quit">やめて もどる</button>`,k=>{
+  function pauseMenu(){if(ended)return;setPause(true);overlay(`<h3>ていし ちゅう</h3><p>スコア ${score.toLocaleString()}</p><button class="primary" data-k="go">つづける</button><button class="sbtn" data-k="hand">ボタンを 左右いれかえ</button><button class="sbtn" data-k="retry">さいしょから</button><button class="ghost" data-k="quit">やめて もどる</button>`,k=>{
+    if(k==='hand'){REC.lefty=!REC.lefty;saveRec();applyHand();setTimeout(pauseMenu,0);return}
     if(k==='go')setPause(false);if(k==='retry'){cleanup();endless(mode)}if(k==='quit'){cleanup();endlessPick(mode)}})}
   const onVis=()=>{if(document.hidden&&!paused&&!ended)pauseMenu()};document.addEventListener('visibilitychange',onVis);
   function cleanup(){ended=true;cancelAnimationFrame(raf);BGM.rate(1);document.removeEventListener('visibilitychange',onVis);closeOverlay()}
@@ -1168,7 +1207,8 @@ function endless(mode='end'){
     setTimeout(()=>{cleanup();BGM.stop();
       const rec={s:score,c:me.maxChain,k:me.cleared,t:Math.round(Math.min(me.elapsed,TA?TA_SEC:1e9)),h:id,d:today(),n:REC.name||''};
       const list=bestList(mode),prevBest=list[0]?list[0].s:0;
-      list.push(rec);list.sort((a,b)=>b.s-a.s);list.splice(10);REC.maxChain=Math.max(REC.maxChain,me.maxChain);saveRec();
+      list.push(rec);list.sort((a,b)=>b.s-a.s);list.splice(10);REC.maxChain=Math.max(REC.maxChain,me.maxChain);
+      REC.st.plays++;REC.st.cleared+=me.cleared;if(!REC.st.chars.includes(id))REC.st.chars.push(id);saveRec();
       endlessResult(rec,score>prevBest&&score>0,mode,timeUp)},1500)}
   if(location.search.includes('debug'))window.__pvs={me,addScore:v=>score+=v};
 }
@@ -1179,6 +1219,7 @@ function endlessResult(rec,isBest,mode='end',timeUp){
    <p class="note">${M.n}${TA&&!timeUp?'（とちゅうで つまった）':''}</p>
    ${isBest?'<span class="newbest">じこベスト こうしん！</span>':''}
    <h2 class="display">${rec.s.toLocaleString()} てん</h2>
+   <p class="note" id="rMyRank"></p>
    <div class="r-stats"><div class="stat sm"><span>さいだいれんさ</span><b>${rec.c}</b></div><div class="stat sm"><span>けした数</span><b>${rec.k}</b></div><div class="stat sm"><span>じかん</span><b>${fmtTime(rec.t)}</b></div><div class="stat sm"><span>レベル</span><b>${Math.min(20,1+Math.floor(rec.t/(TA?20:30)))}</b></div></div>
    <div class="r-btns"><button class="primary" id="rAgain">もういちど</button><button class="sbtn" id="rShare">けっかを シェア</button><button class="sbtn" id="rRank">ランキング</button></div>
    <div class="card"><h3>みんなの ランキングに のせる</h3>
@@ -1192,7 +1233,7 @@ function endlessResult(rec,isBest,mode='end',timeUp){
       box.innerHTML='<button class="primary" id="rSend">ランキングに おくる</button><p class="msg" id="rMsg"></p>';
       $('#rSend').onclick=async e=>{e.target.disabled=true;e.target.textContent='おくっています…';
         const r=Object.assign({},rec,{n:nm}),c=CHARS[r.h],b=baseOf(r.h),fb=!c?null:b!==r.h?(CHARS[b].extra?HERO:b):(c.extra?HERO:null);
-        try{try{await submit.call(O,r)}catch(e1){if(!fb)throw e1;await submit.call(O,Object.assign(r,{h:fb}))}sent=true;se('good');draw()}   // 新しいキャラで はじかれたら、ペアの名前で もういちど
+        try{try{await submit.call(O,r)}catch(e1){if(!fb)throw e1;await submit.call(O,Object.assign(r,{h:fb}))}sent=true;delete rankCache[mode];se('good');draw()}   // 新しいキャラで はじかれたら、ペアの名前で もういちど
         catch(err){e.target.disabled=false;e.target.textContent='もういちど おくる';const m=$('#rMsg');m.className='msg bad';m.textContent='おくれませんでした。つうしんを たしかめてね'}};
       return}
     if(!nm||rec.s<=0){box.innerHTML=`<p>${rec.s<=0?'スコアが 0 のときは コードが でません':'なまえを 入れると「きろくコード」が でます'}</p>`;return}
@@ -1202,28 +1243,59 @@ function endlessResult(rec,isBest,mode='end',timeUp){
   $('#rName').oninput=()=>{REC.name=$('#rName').value.trim();saveRec();draw()};draw();
   $('#rShare').onclick=e=>shareText(`みったーパズルの${M.n}で ${rec.s.toLocaleString()}てん！（さいだい${rec.c}れんさ）`,e.target);
   $('#rAgain').onclick=()=>{unlockAudio();se('tap');endless(mode)};$('#rRank').onclick=()=>{se('tap');rankMode=mode;ranking()};
+  if(rec.s>0)showMyRank(rec,mode,$('#rMyRank'));
+  achCheck();
 }
 
-/* ===== ランキング ===== */
-let rankTab='world',rankMode='end';
+/* ===== ランキング =====
+   みんな／このスマホ、ぜんぶ／こんしゅう、キャラでしぼる・キャラごとの1い */
+let rankTab='world',rankMode='end',rankPeriod='all',rankChar='';
+const weekStart=()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const RANK_N=500;   // みんなのランキングを 何件 よむか
+const rankCache={};
+function worldList(m,cb){   // cb(list|null, err)
+  const O=window.HP_ONLINE,top=O&&(m==='ta'?O.topTA:O.top);
+  if(typeof top==='function'){const c=rankCache[m];if(c&&Date.now()-c.t<60000)return cb(c.list,false,true);
+    top.call(O,RANK_N).then(l=>{rankCache[m]={t:Date.now(),list:Array.isArray(l)?l:[]};cb(rankCache[m].list,false,true)}).catch(()=>cb([],true,true));return}
+  const W=window.WORLD_RANKING||{};cb((m==='ta'?W.ta:W.list)||[],false,false)}
+function filterRank(list){
+  let l=[...list];
+  if(rankPeriod==='week'){const w=weekStart();l=l.filter(r=>String(r.d||'')>=w)}
+  if(rankChar==='@best'){const by={};for(const r of l){const k=r.h||HERO;if(!by[k]||r.s>by[k].s)by[k]=r}l=Object.values(by)}
+  else if(rankChar){l=l.filter(r=>r.h===rankChar||(SOLO[rankChar]&&baseOf(r.h)===rankChar))}
+  return l.sort((a,b)=>b.s-a.s)}
 function ranking(){
-  const body=shell('ランキング','タイトルへ',title);
-  const O=window.HP_ONLINE,cache={};
-  const rows=(list,showName)=>`<div class="rank-wrap"><table class="rank"><thead><tr><th>じゅんい</th><th>${showName?'なまえ':'ひづけ'}</th><th>スコア</th><th>れんさ</th></tr></thead><tbody>${list.map((r,i)=>`<tr class="top${i+1}"><td>${i+1}</td><td><span class="nm"><span class="pvs-ic">${charHTML(CHARS[r.h]?r.h:HERO)}</span><span>${esc(showName?r.n:r.d)}</span></span></td><td><b>${(+r.s).toLocaleString()}</b></td><td>${r.c}</td></tr>`).join('')}</tbody></table></div>`;
-  const world=m=>{const top=O&&(m==='ta'?O.topTA:O.top);
-    if(typeof top==='function'){if(!cache[m]){cache[m]={list:null};top.call(O,50).then(l=>{cache[m].list=Array.isArray(l)?l:[];draw()}).catch(()=>{cache[m]={list:[],err:true};draw()})}return Object.assign({online:true},cache[m])}
-    const W=window.WORLD_RANKING||{};return {online:false,list:(m==='ta'?W.ta:W.list)||[],updated:W.updated}};
-  const draw=()=>{if($('#gBody')!==body)return;const m=rankMode,W=world(m),wl=[...(W.list||[])].sort((a,b)=>b.s-a.s).slice(0,50),mine=bestList(m);
-    const worldHTML=W.list===null?'<div class="empty">よみこみ ちゅう…</div>':W.err?'<div class="empty">ランキングを よみこめませんでした。<br>つうしんを たしかめて、もういちど ひらいてね。</div>':wl.length?rows(wl,true)+`<p class="note">${W.online?'おくられた きろくです':'きろくコードを おくってくれた人の きろくです'}${W.updated?`（${esc(W.updated)} こうしん）`:''}</p>`:`<div class="empty">まだ だれも のっていません。<br>${W.online?'けっか画面から おくると、ここに のります。':'けっか画面で でる「きろくコード」を<br>ランキングの かかりの人に おくると、ここに のります。'}</div>`;
+  const body=shell('ランキング','タイトルへ',title);let W={list:null};
+  const rows=(list,showName)=>`<div class="rank-wrap"><table class="rank"><thead><tr><th>じゅんい</th><th>${showName?'なまえ':'ひづけ'}</th><th>スコア</th><th>れんさ</th></tr></thead><tbody>${list.map((r,i)=>`<tr class="top${i+1}"><td>${i+1}</td><td><span class="nm"><span class="pvs-ic">${charHTML(CHARS[r.h]?r.h:HERO)}</span><span>${esc(showName?r.n:r.d)}${rankChar==='@best'?`<small class="rk-ch">${esc((CHARS[r.h]||CHARS[HERO]).name)}</small>`:''}</span></span></td><td><b>${(+r.s).toLocaleString()}</b></td><td>${r.c}</td></tr>`).join('')}</tbody></table></div>`;
+  const charOpts=()=>{let o='<option value="">ぜんぶの キャラ</option><option value="@best">キャラごとの 1い</option>';
+    for(const id of PICK_IDS()){o+=`<option value="${id}">${esc(CHARS[id].name)}</option>`;(SOLO[id]||[]).forEach(x=>o+=`<option value="${x}">　└ ${esc(CHARS[x].name)}</option>`)}return o};
+  const draw=()=>{if($('#gBody')!==body)return;const m=rankMode;
+    const src=rankTab==='world'?W.list:bestList(m),list=src?filterRank(src).slice(0,50):null;
+    let main;
+    if(rankTab==='world'&&W.list===null)main='<div class="empty">よみこみ ちゅう…</div>';
+    else if(rankTab==='world'&&W.err)main='<div class="empty">ランキングを よみこめませんでした。<br>つうしんを たしかめて、もういちど ひらいてね。</div>';
+    else if(!list.length)main=`<div class="empty">${rankPeriod==='week'||rankChar?'この じょうけんの きろくは まだ ありません。':rankTab==='world'?'まだ だれも のっていません。':`まだ きろくが ありません。<br>${MODES[m].n}を あそぶと、ここに じこベストが のこります。`}</div>`;
+    else main=rows(list,rankTab==='world')+(rankTab==='world'?`<p class="note">${rankPeriod==='week'?`こんしゅう（${weekStart().slice(5).replace('-','/')}〜）の きろく`:'ぜんぶの きろく'}${W.online?'':'（きろくコードを おくってくれた人）'}</p>`:'');
     body.innerHTML=`<div class="tabs">${Object.entries(MODES).map(([k,v])=>`<button class="sbtn${rankMode===k?' on':''}" data-mode="${k}">${v.n}</button>`).join('')}</div>
-    <div class="tabs"><button class="ghost${rankTab==='world'?' on':''}" data-t="world">みんな</button><button class="ghost${rankTab==='mine'?' on':''}" data-t="mine">このスマホ</button></div>
-    ${rankTab==='world'?worldHTML:(mine.length?rows(mine,false):`<div class="empty">まだ きろくが ありません。<br>${MODES[m].n}を あそぶと、ここに じこベストが のこります。</div>`)}
+    <div class="tabs"><button class="ghost${rankTab==='world'?' on':''}" data-t="world">みんな</button><button class="ghost${rankTab==='mine'?' on':''}" data-t="mine">このスマホ</button>
+     <span class="rk-sep"></span><button class="ghost${rankPeriod==='all'?' on':''}" data-p="all">ぜんぶ</button><button class="ghost${rankPeriod==='week'?' on':''}" data-p="week">こんしゅう</button></div>
+    <label class="rk-sel" for="rkChar">キャラ <select id="rkChar">${charOpts()}</select></label>
+    ${main}
     <button class="primary" id="kGo" style="align-self:center">${MODES[m].n}で あそぶ</button>`;
+    $('#rkChar').value=rankChar;$('#rkChar').onchange=e=>{rankChar=e.target.value;draw()};
     body.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{se('tap');rankTab=b.dataset.t;draw()});
-    body.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{se('tap');rankMode=b.dataset.mode;draw()});
+    body.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{se('tap');rankPeriod=b.dataset.p;draw()});
+    body.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{se('tap');rankMode=b.dataset.mode;load()});
     $('#kGo').onclick=()=>{se('tap');endlessPick(m)}};
-  draw();
+  const load=()=>{W={list:null};draw();worldList(rankMode,(l,err,online)=>{W={list:l,err,online};draw()})};
+  load();
 }
+/* 結果画面：みんなの中での 順位 */
+function showMyRank(rec,mode,el){
+  worldList(mode,(l,err)=>{if(!el.isConnected)return;if(err){el.textContent='';return}
+    const w=weekStart(),all=l.filter(r=>r.s>rec.s).length+1,wk=l.filter(r=>String(r.d||'')>=w&&r.s>rec.s).length+1;
+    const fmt=n=>n>RANK_N?`${RANK_N}い より下`:`${n}い`;
+    el.innerHTML=l.length?`みんなの 中で <b>${fmt(all)}</b>・こんしゅう <b>${fmt(wk)}</b> くらい`:''})}
 
 /* ===== はじめての れんしゅう ===== */
 const TUT_A=[[0,1,2,2,3,2],[1,3,4,0,1,4],[3,4,0,1,4,1]];   // 下の段から。右はしの2つを入れかえると よこに3つ
@@ -1261,14 +1333,87 @@ function tutorial(done){
   show();
 }
 
+/* ===== スチル・じっせき・キャラずかん =====
+   STILLS：img/stills/stillNN.webp。ACH：条件をみたすと、そのスチルが手に入る */
+const STILLS=['わしも',"そうた's",'そうたしょた','そうた','せみぬペア','せみ','みぬ','こぶ太郎','だぬ','玖狼（女性）','たいぬ','メジェド','せみ（もふ）',
+  'ゴゴ&風子','ゴゴ','風子','凛歌','オ゛崎','とーふ','とふきたペア','北方','玖狼','兎水','屋上組'].map((n,i)=>({n,f:`img/stills/still${String(i+1).padStart(2,'0')}.webp`}));
+const STS=()=>REC.st;
+const ACH=[
+  {id:'st1',n:'さいしょの しょうり',d:'ストーリーで 1組目に かつ',s:17,ok:()=>REC.prog>=1},
+  {id:'st2',n:'ラブラブを こえて',d:'ストーリーで 2組目に かつ',s:8,ok:()=>REC.prog>=2},
+  {id:'st3',n:'しずかな あつを こえて',d:'ストーリーで 3組目に かつ',s:5,ok:()=>REC.prog>=3},
+  {id:'st4',n:'屋上の ゲーマー',d:'ストーリーで 4組目に かつ',s:24,ok:()=>REC.prog>=4},
+  {id:'st5',n:'さいきょうの ペア',d:'ストーリーで 5組目に かつ',s:14,ok:()=>REC.prog>=5},
+  {id:'st6',n:'一番星に とどけ',d:'ストーリーを クリアする',s:18,ok:()=>REC.prog>=6},
+  {id:'hd3',n:'ほんきの はんぶん',d:'ハードモードで 3組に かつ',s:6,ok:()=>REC.hprog>=3},
+  {id:'hd6',n:'ハードモード せいは',d:'ハードモードを クリアする',s:16,ok:()=>REC.hprog>=6},
+  {id:'pl1',n:'はじめての ちょうせん',d:'エンドレスか スコアアタックを 1回 あそぶ',s:13,ok:()=>STS().plays>=1},
+  {id:'ch2',n:'れんさ デビュー',d:'2れんさ する',s:9,ok:()=>REC.maxChain>=2},
+  {id:'ch3',n:'3れんさ',d:'3れんさ する',s:7,ok:()=>REC.maxChain>=3},
+  {id:'ch4',n:'4れんさ',d:'4れんさ する',s:23,ok:()=>REC.maxChain>=4},
+  {id:'ch5',n:'れんさ しょくにん',d:'5れんさ する',s:12,ok:()=>REC.maxChain>=5},
+  {id:'ch6',n:'れんさの たつじん',d:'6れんさ する',s:1,ok:()=>REC.maxChain>=6},
+  {id:'en1',n:'エンドレス 5,000',d:'エンドレスで 5,000てん',s:11,ok:()=>(REC.best[0]||{s:0}).s>=5000},
+  {id:'en2',n:'エンドレス 15,000',d:'エンドレスで 15,000てん',s:22,ok:()=>(REC.best[0]||{s:0}).s>=15000},
+  {id:'en3',n:'エンドレス 30,000',d:'エンドレスで 30,000てん',s:15,ok:()=>(REC.best[0]||{s:0}).s>=30000},
+  {id:'ta1',n:'スコアアタック 3,000',d:'スコアアタックで 3,000てん',s:19,ok:()=>(REC.bestTA[0]||{s:0}).s>=3000},
+  {id:'ta2',n:'スコアアタック 8,000',d:'スコアアタックで 8,000てん',s:21,ok:()=>(REC.bestTA[0]||{s:0}).s>=8000},
+  {id:'ta3',n:'スコアアタック 15,000',d:'スコアアタックで 15,000てん',s:20,ok:()=>(REC.bestTA[0]||{s:0}).s>=15000},
+  {id:'pn1',n:'パネル 1,000こ',d:'パネルを ぜんぶで 1,000こ けす',s:3,ok:()=>STS().cleared>=1000},
+  {id:'pn2',n:'パネル 5,000こ',d:'パネルを ぜんぶで 5,000こ けす',s:4,ok:()=>STS().cleared>=5000},
+  {id:'cr5',n:'なかまが ふえた',d:'5人の キャラで あそぶ（エンドレス・スコアアタック）',s:10,ok:()=>STS().chars.length>=5},
+  {id:'cr15',n:'みんなと あそんだ',d:'15人の キャラで あそぶ（エンドレス・スコアアタック）',s:2,ok:()=>STS().chars.length>=15},
+];
+const stillOpen=i=>ACH.some(a=>a.s===i+1&&REC.ach[a.id]);
+const achDone=()=>ACH.filter(a=>REC.ach[a.id]).length;
+function achCheck(){const nw=ACH.filter(a=>!REC.ach[a.id]&&a.ok());if(!nw.length)return;nw.forEach(a=>REC.ach[a.id]=today());saveRec();
+  let k=0;const show=()=>{const a=nw[k],s=STILLS[a.s-1],last=k===nw.length-1;se('up');
+    closeOverlay();const o=document.createElement('div');o.className='ovl';o.id='ovl';
+    o.innerHTML=`<div class="card ach-pop"><p class="clear-ttl" style="font-size:22px">スチル かいほう！</p><img src="${s.f}" alt="${esc(s.n)}"><b>${esc(s.n)}</b><p>じっせき「${esc(a.n)}」</p>
+      ${achDone()===ACH.length&&last?'<p class="msg">ぜんぶ あつめた！ しょうごう「みったーマスター」</p>':''}<button class="primary" data-k="go">${last?'とじる':'つぎへ'}</button></div>`;
+    document.body.appendChild(o);o.querySelector('[data-k]').onclick=()=>{se('tap');k++;if(k<nw.length)show();else closeOverlay()}};
+  show()}
+function stillViewer(i){const open=STILLS.map((s,j)=>j).filter(stillOpen);let p=open.indexOf(i);if(p<0)return;
+  closeOverlay();const o=document.createElement('div');o.className='ovl stv';o.id='ovl';document.body.appendChild(o);
+  const draw=()=>{const s=STILLS[open[p]];o.innerHTML=`<img src="${s.f}" alt="${esc(s.n)}"><div class="stv-bar"><button class="sbtn" data-a="-1" ${p?'':'disabled'}>◀</button><b>${esc(s.n)}</b><button class="sbtn" data-a="1" ${p<open.length-1?'':'disabled'}>▶</button></div><button class="ghost stv-x" data-a="x">とじる</button>`;
+    o.querySelectorAll('[data-a]').forEach(b=>b.onclick=e=>{e.stopPropagation();const a=b.dataset.a;if(a==='x')return closeOverlay();p=clamp(p+(+a),0,open.length-1);draw()})};
+  let sx=null;o.addEventListener('pointerdown',e=>sx=e.clientX);o.addEventListener('pointerup',e=>{if(sx===null)return;const d=e.clientX-sx;sx=null;if(Math.abs(d)>50){p=clamp(p+(d<0?1:-1),0,open.length-1);draw()}});
+  draw()}
+let stillTab='still';
+function stills(){
+  const body=shell('スチル・じっせき','タイトルへ',title);
+  const draw=()=>{const n=STILLS.filter((s,i)=>stillOpen(i)).length,all=achDone()===ACH.length;
+    body.innerHTML=`<div class="tabs"><button class="sbtn${stillTab==='still'?' on':''}" data-t="still">スチル ${n}/${STILLS.length}</button><button class="sbtn${stillTab==='ach'?' on':''}" data-t="ach">じっせき ${achDone()}/${ACH.length}</button></div>
+    ${all?'<p class="msg">しょうごう「みったーマスター」 ぜんぶ あつめた！</p>':''}
+    ${stillTab==='still'?`<div class="stills">${STILLS.map((s,i)=>{const op=stillOpen(i),a=ACH.find(x=>x.s===i+1);return op?`<button class="st-c" data-i="${i}"><img src="${s.f}" alt="${esc(s.n)}" loading="lazy"><span>${esc(s.n)}</span></button>`:`<div class="st-c lock"><img src="${s.f}" alt="" loading="lazy"><i>？</i><span>${esc(a?a.d:'')}</span></div>`}).join('')}</div>`
+    :`<div class="achs">${ACH.map(a=>`<div class="ach${REC.ach[a.id]?' on':''}"><b>${REC.ach[a.id]?'★':'☆'}</b><div><strong>${esc(a.n)}</strong><small>${esc(a.d)}</small></div><em>${REC.ach[a.id]?esc(STILLS[a.s-1].n):'？'}</em></div>`).join('')}</div>`}`;
+    body.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{se('tap');stillTab=b.dataset.t;draw()});
+    body.querySelectorAll('.st-c[data-i]').forEach(b=>b.onclick=()=>{se('tap');stillViewer(+b.dataset.i)})};
+  draw();achCheck()}
+/* キャラずかん：えらべるキャラの 5つの表情と セリフ */
+const ZUKAN_IDS=()=>{const out=[];for(const id of PICK_IDS()){out.push(id);(SOLO[id]||[]).forEach(x=>out.push(x))}return out};
+function zukan(){
+  const body=shell('キャラずかん','タイトルへ',title);const ids=ZUKAN_IDS(),n=ids.filter(unlocked).length;
+  body.innerHTML=`<p class="note">${n}/${ids.length} にん であった</p><div class="pick">${ids.map(id=>unlocked(id)?`<button data-id="${id}">${charHTML(id)}<span>${esc(CHARS[id].name)}</span></button>`:`<button disabled class="lock"><span class="stg-q" aria-hidden="true">？</span><span>？？？</span></button>`).join('')}</div>
+   <p class="note">ストーリーで かった あいては、ここに のるよ</p>`;
+  body.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{se('tap');zukanOne(b.dataset.id)})}
+function zukanOne(id){
+  const c=CHARS[id],L=endlessLines(id),EXJ={normal:'ノーマル',pinch:'ピンチ',attack:'こうげき',win:'かち',lose:'まけ'};
+  const body=shell(esc(c.name),'ずかんへ',zukan);let ex='normal';
+  const draw=()=>{body.innerHTML=`<div class="card" style="align-items:center;text-align:center"><div class="r-ch" style="height:min(46vh,360px)">${charHTML(id,ex)}</div><h3>${esc(c.name)}</h3>${c.of?`<p>${esc(CHARS[c.of].name)}の ひとり</p>`:''}
+     <div class="seg">${EXPR.map(e=>`<button class="sbtn${e===ex?' on':''}" data-e="${e}">${EXJ[e]}</button>`).join('')}</div></div>
+    <div class="card"><h3>セリフ</h3>${['attack','pinch','win','lose'].map(k=>`<p><b style="color:var(--star)">${EXJ[k]}</b>　${(L[k]||[]).map(esc).join('<br>　')}</p>`).join('')}</div>`;
+    body.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{se('tap');ex=b.dataset.e;draw()})};
+  draw()}
+
 /* ===== せってい・ひきつぎ ===== */
 function settings(){
   const body=shell('せってい・ひきつぎ','タイトルへ',title);
-  const save=()=>({v:2,name:REC.name,prog:REC.prog,fails:REC.fails,wins:REC.wins,losses:REC.losses,seenPro:REC.seenPro,seenOp:REC.seenOp,seenEpi:REC.seenEpi,best:REC.best,endChar:REC.endChar,maxChain:REC.maxChain,diff:REC.diff,hprog:REC.hprog,bestTA:REC.bestTA,tut:REC.tut});
+  const save=()=>({v:2,name:REC.name,prog:REC.prog,fails:REC.fails,wins:REC.wins,losses:REC.losses,seenPro:REC.seenPro,seenOp:REC.seenOp,seenEpi:REC.seenEpi,best:REC.best,endChar:REC.endChar,maxChain:REC.maxChain,diff:REC.diff,hprog:REC.hprog,bestTA:REC.bestTA,tut:REC.tut,ach:REC.ach,st:REC.st,lefty:!!REC.lefty});
   const draw=()=>{const code=makeCode('S',save());
     body.innerHTML=`<div class="card"><h3>なまえ と おと</h3>
      <label class="fld" for="sName">あなたの なまえ（10文字まで）<input id="sName" maxlength="10" value="${esc(REC.name)}" placeholder="あなた"></label>
-     <div class="menu-row" style="justify-content:flex-start"><button class="sbtn${REC.bgm?' on':''}" id="sBgm">BGM ${REC.bgm?'ON':'OFF'}</button><button class="sbtn${REC.se?' on':''}" id="sSe">こうかおん ${REC.se?'ON':'OFF'}</button>${navigator.vibrate?`<button class="sbtn${REC.vib?' on':''}" id="sVib">ぶるぶる ${REC.vib?'ON':'OFF'}</button>`:''}</div>
+     <div class="menu-row" style="justify-content:flex-start"><button class="sbtn${REC.bgm?' on':''}" id="sBgm">BGM ${REC.bgm?'ON':'OFF'}</button><button class="sbtn${REC.se?' on':''}" id="sSe">こうかおん ${REC.se?'ON':'OFF'}</button><button class="sbtn${REC.lefty?' on':''}" id="sHand">${REC.lefty?'左きき ボタン':'右きき ボタン'}</button>${navigator.vibrate?`<button class="sbtn${REC.vib?' on':''}" id="sVib">ぶるぶる ${REC.vib?'ON':'OFF'}</button>`:''}</div>
      ${navigator.vibrate?'':'<p>この端末では「ぶるぶる」（ふるえる機能）は つかえません</p>'}</div>
     <div class="card"><h3>ひきつぎコード（べつの スマホへ）</h3>
      <p>ストーリーの すすみぐあいと エンドレスの きろくが はいっています。べつの スマホや ブラウザで「コードを 入れる」に はりつけると、つづきから あそべます。</p>
@@ -1280,6 +1425,7 @@ function settings(){
     $('#sName').oninput=e=>{REC.name=e.target.value.trim();saveRec();$('#sCode').textContent=makeCode('S',save())};
     $('#sBgm').onclick=()=>{BGM.toggle();draw()};
     $('#sSe').onclick=()=>{REC.se=REC.se?0:.8;saveRec();draw()};
+    $('#sHand').onclick=()=>{REC.lefty=!REC.lefty;saveRec();applyHand();draw()};
     if($('#sVib'))$('#sVib').onclick=()=>{REC.vib=!REC.vib;saveRec();if(REC.vib)vib(60);draw()};
     $('#sCopy').onclick=e=>copyText($('#sCode').textContent,e.target,$('#sCode'));
     let pending=null;
@@ -1287,12 +1433,13 @@ function settings(){
       if(pending){Object.assign(REC,REC_DEF(),{se:REC.se,bgm:REC.bgm},pending);saveRec();pending=null;draw();$('#sMsg').textContent='よみこみました！';return}
       const d=readCode('S',$('#sIn').value);
       if(!d||typeof d!=='object'||d.v!==2){m.className='msg bad';m.textContent='コードが ちがうようです。さいごまで コピーできているか たしかめてね';return}
-      pending={name:String(d.name||'').slice(0,10),prog:clamp(+d.prog||0,0,6),fails:Array.isArray(d.fails)?d.fails.slice(0,6).map(x=>+x||0):[0,0,0,0,0,0],wins:+d.wins||0,losses:+d.losses||0,seenPro:!!d.seenPro,seenOp:!!d.seenOp,seenEpi:!!d.seenEpi,diff:DIFF[d.diff]?d.diff:'normal',hprog:clamp(+d.hprog||0,0,6),bestTA:Array.isArray(d.bestTA)?d.bestTA.slice(0,10):[],tut:!!d.tut,best:Array.isArray(d.best)?d.best.slice(0,10):[],endChar:CHARS[d.endChar]?d.endChar:HERO,maxChain:+d.maxChain||1};
+      pending={name:String(d.name||'').slice(0,10),prog:clamp(+d.prog||0,0,6),fails:Array.isArray(d.fails)?d.fails.slice(0,6).map(x=>+x||0):[0,0,0,0,0,0],wins:+d.wins||0,losses:+d.losses||0,seenPro:!!d.seenPro,seenOp:!!d.seenOp,seenEpi:!!d.seenEpi,diff:DIFF[d.diff]?d.diff:'normal',hprog:clamp(+d.hprog||0,0,6),bestTA:Array.isArray(d.bestTA)?d.bestTA.slice(0,10):[],tut:!!d.tut,lefty:!!d.lefty,ach:(d.ach&&typeof d.ach==='object')?d.ach:{},st:Object.assign({plays:0,cleared:0,chars:[]},d.st&&typeof d.st==='object'?d.st:{}),best:Array.isArray(d.best)?d.best.slice(0,10):[],endChar:CHARS[d.endChar]?d.endChar:HERO,maxChain:+d.maxChain||1};
       m.className='msg';m.textContent=`${pending.prog}/6 クリア・エンドレス ${pending.best.length}けん。いまの きろくは うわがきされます。`;e.target.textContent='うわがきして よみこむ'};
   };
   draw();
 }
 
+applyHand();
 initBack();
 splash();
 </script>
