@@ -70,7 +70,7 @@ const firebaseConfig = {
   async function top(limit) {
     var set = await ready();
     var fs = set.fs;
-    var n = Math.max(1, Math.min(200, Math.floor(Number(limit) || 50)));
+    var n = Math.max(1, Math.min(500, Math.floor(Number(limit) || 50)));
     var q = fs.query(
       fs.collection(set.db, "scores"),
       fs.orderBy("s", "desc"),
@@ -98,7 +98,7 @@ const firebaseConfig = {
   async function topTA(limit) {
     var set = await ready();
     var fs = set.fs;
-    var n = Math.max(1, Math.min(200, Math.floor(Number(limit) || 50)));
+    var n = Math.max(1, Math.min500, Math.floor(Number(limit) || 50)));
     var q = fs.query(
       fs.collection(set.db, "scores_ta"),
       fs.orderBy("s", "desc"),
