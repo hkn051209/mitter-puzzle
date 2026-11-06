@@ -479,6 +479,7 @@ window.WORLD_RANKING={updated:'',list:[]};
   online.js は window.HP_ONLINE = { submit: async rec => {}, top: async limit => [rec, ...] } を用意する。
   rec = {n:名前, s:スコア, c:最大れんさ, k:消した数, t:秒, h:キャラid, d:'YYYY-MM-DD'} -->
 <script src="online.js"></script>
+<script src="online2.js"></script>
 <script>
 /* ====== みったーパズル（もとは「ほしパネル たいせん」の単体ゲーム版） ======
    盤面のしくみ(makePanelBoard)・十字キー(padUI)・効果音(se)は「ほしのこ」アプリと同じコードがもと。
@@ -1103,7 +1104,7 @@ const MODES={end:{n:'エンドレス',d:'てんじょうまで ひたすら け�
 const TA_SEC=120;
 const unlocked=id=>{const c=CHARS[id];if(!c)return false;if(id===HERO||c.extra)return true;const b=baseOf(id);if(CHARS[b]&&CHARS[b].extra)return true;return STAGES.some((s,i)=>s.ch===b&&i<REC.prog)};
 const PICK_IDS=()=>[HERO,'hikono','washimo','medjed','tainu','semimofu','kurouf','tofukita','soutas',...STAGES.map(s=>s.ch)];   // えらぶ画面にならべる順（1人ずつは ペアの中で えらぶ）
-const bestList=m=>m==='ta'?REC.bestTA:REC.best;
+const bestList=m=>m==='ta'?REC.bestTA:m==='rush'?(REC.bestRush?[REC.bestRush]:[]):m==='kachi'?(REC.bestKachi?[REC.bestKachi]:[]):REC.best;
 const SHARE_URL='https://hkn051209.github.io/mitter-puzzle/';
 async function shareText(text,btn){
   try{if(navigator.share){await navigator.share({text,url:SHARE_URL});return}}catch(e){if(e&&e.name==='AbortError')return}
@@ -1257,7 +1258,9 @@ function endlessResult(rec,isBest,mode='end',timeUp){
 }
 
 /* ランキングに おくる（結果画面と「このスマホ」の両方で使う）。おくった記録には sent を付けて保存 */
-async function sendRecord(rec,mode,nm){const O=window.HP_ONLINE,submit=O&&(mode==='ta'?O.submitTA:O.submit);if(typeof submit!=='function')throw new Error('offline');
+const submitFor=(O,m)=>m==='ta'?O.submitTA:m==='rush'?O.submitRush:m==='kachi'?O.submitKachi:O.submit;
+const topFor=(O,m)=>m==='ta'?O.topTA:m==='rush'?O.topRush:m==='kachi'?O.topKachi:O.top;
+async function sendRecord(rec,mode,nm){const O=window.HP_ONLINE,submit=O&&submitFor(O,mode);if(typeof submit!=='function')throw new Error('offline');
   const r=Object.assign({},rec,{n:nm});delete r.sent;const c=CHARS[r.h],b=baseOf(r.h),fb=!c?null:b!==r.h?(CHARS[b].extra?HERO:b):(c.extra?HERO:null);
   try{await submit.call(O,r)}catch(e1){if(!fb)throw e1;await submit.call(O,Object.assign(r,{h:fb}))}   // 新しいキャラで はじかれたら、ペアの名前で もういちど
   rec.sent=true;saveRec();delete rankCache[mode]}
@@ -1268,22 +1271,27 @@ const weekStart=()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate(
 const RANK_N=500;   // みんなのランキングを 何件 よむか
 const rankCache={};
 function worldList(m,cb){   // cb(list|null, err)
-  const O=window.HP_ONLINE,top=O&&(m==='ta'?O.topTA:O.top);
+  const O=window.HP_ONLINE,top=O&&topFor(O,m);
   if(typeof top==='function'){const c=rankCache[m];if(c&&Date.now()-c.t<60000)return cb(c.list,false,true);
     top.call(O,RANK_N).then(l=>{rankCache[m]={t:Date.now(),list:Array.isArray(l)?l:[]};cb(rankCache[m].list,false,true)}).catch(()=>cb([],true,true));return}
   const W=window.WORLD_RANKING||{};cb((m==='ta'?W.ta:W.list)||[],false,false)}
+const rankVal=(m,r)=>m==='rush'?(+r.t||999999):m==='kachi'?(+r.w||0):(+r.s||0);
+const rankCmp=(m,a,b)=>m==='rush'?rankVal(m,a)-rankVal(m,b):rankVal(m,b)-rankVal(m,a);
 function filterRank(list){
   let l=[...list];
   if(rankPeriod==='week'){const w=weekStart();l=l.filter(r=>String(r.d||'')>=w)}
-  if(rankChar==='@best'){const by={};for(const r of l){const k=r.h||HERO;if(!by[k]||r.s>by[k].s)by[k]=r}l=Object.values(by)}
+  if(rankChar==='@best'){const by={};for(const r of l){const k=r.h||HERO;if(!by[k]||rankCmp(rankMode,r,by[k])<0)by[k]=r}l=Object.values(by)}
   else if(rankChar){l=l.filter(r=>r.h===rankChar||(SOLO[rankChar]&&baseOf(r.h)===rankChar))}
-  return l.sort((a,b)=>b.s-a.s)}
+  return l.sort((a,b)=>rankCmp(rankMode,a,b))}
 function ranking(back){
   const body=shell('ランキング',back?'けっかへ もどる':'タイトルへ',back||title);let W={list:null};
-  const rows=(list,showName)=>`<div class="rank-wrap"><table class="rank"><thead><tr><th>じゅんい</th><th>${showName?'なまえ':'ひづけ'}</th><th>スコア</th><th>れんさ</th></tr></thead><tbody>${list.map((r,i)=>`<tr class="top${i+1}"><td>${i+1}</td><td><span class="nm"><span class="pvs-ic">${charHTML(CHARS[r.h]?r.h:HERO)}</span><span>${esc(showName?r.n:r.d)}${rankChar==='@best'?`<small class="rk-ch">${esc((CHARS[r.h]||CHARS[HERO]).name)}</small>`:''}</span></span></td><td><b>${(+r.s).toLocaleString()}</b></td><td>${r.c}</td></tr>`).join('')}</tbody></table></div>`;
-  const hasOnline=m=>{const O=window.HP_ONLINE;return !!O&&typeof (m==='ta'?O.submitTA:O.submit)==='function'};
+  const rows=(list,showName)=>{const mm=rankMode,rush=mm==='rush',kachi=mm==='kachi';
+    const val=r=>rush?fmtTime(r.t):kachi?(+r.w||0)+'にん':(+r.s).toLocaleString();
+    const sub=r=>rush?esc(r.d||''):kachi?fmtTime(r.t):r.c;
+    return `<div class="rank-wrap"><table class="rank"><thead><tr><th>じゅんい</th><th>${showName?'なまえ':'ひづけ'}</th><th>${rush?'タイム':kachi?'ぬいた数':'スコア'}</th><th>${rush?'ひづけ':kachi?'じかん':'れんさ'}</th></tr></thead><tbody>${list.map((r,i)=>`<tr class="top${i+1}"><td>${i+1}</td><td><span class="nm"><span class="pvs-ic">${charHTML(CHARS[r.h]?r.h:HERO)}</span><span>${esc(showName?r.n:r.d)}${rankChar==='@best'?`<small class="rk-ch">${esc((CHARS[r.h]||CHARS[HERO]).name)}</small>`:''}</span></span></td><td><b>${val(r)}</b></td><td>${sub(r)}</td></tr>`).join('')}</tbody></table></div>`};
+  const hasOnline=m=>{const O=window.HP_ONLINE;return !!O&&typeof submitFor(O,m)==='function'};
   const mineRows=(list,m)=>`<label class="fld" for="rkName">ランキングに出す なまえ<input id="rkName" maxlength="10" value="${esc(REC.name)}" placeholder="なまえ"></label>
-    <div class="rank-wrap"><table class="rank"><thead><tr><th>じゅんい</th><th>ひづけ</th><th>スコア</th><th></th></tr></thead><tbody>${list.map((r,i)=>`<tr class="top${i+1}"><td>${i+1}</td><td><span class="nm"><span class="pvs-ic">${charHTML(CHARS[r.h]?r.h:HERO)}</span><span>${esc(r.d)}</span></span></td><td><b>${(+r.s).toLocaleString()}</b></td><td>${r.sent?'<small class="rk-ch">おくった</small>':`<button class="ghost rk-send" data-ix="${bestList(m).indexOf(r)}">おくる</button>`}</td></tr>`).join('')}</tbody></table></div>`;
+    <div class="rank-wrap"><table class="rank"><thead><tr><th>じゅんい</th><th>ひづけ</th><th>${m==='rush'?'タイム':m==='kachi'?'ぬいた数':'スコア'}</th><th></th></tr></thead><tbody>${list.map((r,i)=>`<tr class="top${i+1}"><td>${i+1}</td><td><span class="nm"><span class="pvs-ic">${charHTML(CHARS[r.h]?r.h:HERO)}</span><span>${esc(r.d)}</span></span></td><td><b>${m==='rush'?fmtTime(r.t):m==='kachi'?(+r.w||0)+'にん':(+r.s).toLocaleString()}</b></td><td>${r.sent?'<small class="rk-ch">おくった</small>':`<button class="ghost rk-send" data-ix="${bestList(m).indexOf(r)}">おくる</button>`}</td></tr>`).join('')}</tbody></table></div>`;
   const charOpts=()=>{let o='<option value="">ぜんぶの キャラ</option><option value="@best">キャラごとの 1い</option>';
     for(const id of PICK_IDS()){o+=`<option value="${id}">${esc(CHARS[id].name)}</option>`;(SOLO[id]||[]).forEach(x=>o+=`<option value="${x}">　└ ${esc(CHARS[x].name)}</option>`)}return o};
   const draw=()=>{if($('#gBody')!==body)return;const m=rankMode;
@@ -1291,20 +1299,20 @@ function ranking(back){
     let main;
     if(rankTab==='world'&&W.list===null)main='<div class="empty">よみこみ ちゅう…</div>';
     else if(rankTab==='world'&&W.err)main='<div class="empty">ランキングを よみこめませんでした。<br>つうしんを たしかめて、もういちど ひらいてね。</div>';
-    else if(!list.length)main=`<div class="empty">${rankPeriod==='week'||rankChar?'この じょうけんの きろくは まだ ありません。':rankTab==='world'?'まだ だれも のっていません。':`まだ きろくが ありません。<br>${MODES[m].n}を あそぶと、ここに じこベストが のこります。`}</div>`;
+    else if(!list.length)main=`<div class="empty">${rankPeriod==='week'||rankChar?'この じょうけんの きろくは まだ ありません。':rankTab==='world'?'まだ だれも のっていません。':`まだ きろくが ありません。<br>${(MODES[m]||CHAL[m]).n}を あそぶと、ここに じこベストが のこります。`}</div>`;
     else if(rankTab==='mine'&&hasOnline(m))main=mineRows(list,m)+'<p class="note">まだ おくっていない きろくは、ここから ランキングに おくれます</p>';
     else main=rows(list,rankTab==='world')+(rankTab==='world'?`<p class="note">${rankPeriod==='week'?`こんしゅう（${weekStart().slice(5).replace('-','/')}〜）の きろく`:'ぜんぶの きろく'}${W.online?'':'（きろくコードを おくってくれた人）'}</p>`:'');
-    body.innerHTML=`<div class="tabs">${Object.entries(MODES).map(([k,v])=>`<button class="sbtn${rankMode===k?' on':''}" data-mode="${k}">${v.n}</button>`).join('')}</div>
+    body.innerHTML=`<div class="tabs">${Object.entries(MODES).map(([k,v])=>`<button class="sbtn${rankMode===k?' on':''}" data-mode="${k}">${v.n}</button>`).join('')}<button class="sbtn${rankMode==='rush'?' on':''}" data-mode="rush">ボスラッシュ</button><button class="sbtn${rankMode==='kachi'?' on':''}" data-mode="kachi">かちぬき</button></div>
     <div class="tabs"><button class="ghost${rankTab==='world'?' on':''}" data-t="world">みんな</button><button class="ghost${rankTab==='mine'?' on':''}" data-t="mine">このスマホ</button>
      <span class="rk-sep"></span><button class="ghost${rankPeriod==='all'?' on':''}" data-p="all">ぜんぶ</button><button class="ghost${rankPeriod==='week'?' on':''}" data-p="week">こんしゅう</button></div>
     <label class="rk-sel" for="rkChar">キャラ <select id="rkChar">${charOpts()}</select></label>
     ${main}
-    <button class="primary" id="kGo" style="align-self:center">${MODES[m].n}で あそぶ</button>`;
+    <button class="primary" id="kGo" style="align-self:center">${(MODES[m]||CHAL[m]).n}で あそぶ</button>`;
     $('#rkChar').value=rankChar;$('#rkChar').onchange=e=>{rankChar=e.target.value;draw()};
     body.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{se('tap');rankTab=b.dataset.t;draw()});
     body.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{se('tap');rankPeriod=b.dataset.p;draw()});
     body.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{se('tap');rankMode=b.dataset.mode;load()});
-    $('#kGo').onclick=()=>{se('tap');endlessPick(m)};
+    $('#kGo').onclick=()=>{se('tap');(m==='rush'||m==='kachi')?chalPick(m):endlessPick(m)};
     if($('#rkName'))$('#rkName').oninput=e=>{REC.name=e.target.value.trim();saveRec()};
     body.querySelectorAll('.rk-send').forEach(b=>b.onclick=async()=>{const nm=($('#rkName').value||'').trim();if(!nm){toast('なまえを 入れてね');$('#rkName').focus();return}
       const rec=bestList(m)[+b.dataset.ix];if(!rec)return;b.disabled=true;b.textContent='…';
@@ -1525,10 +1533,25 @@ function chalResult(mode,w,t,clear){
     <p class="note">${CHAL[mode].n}</p>${isBest?'<span class="newbest">じこベスト こうしん！</span>':''}
     <h2 class="display">${R?(clear?`クリア！ ${fmtTime(t)}`:`${w}/6 まで すすんだ`):`${w}にん ぬき！`}</h2>
     <p class="note">${R?(clear?'6人 ぜんいんに かった！':'つぎは さいごまで いけるかな？'):`あそんだ じかん ${fmtTime(t)}`}</p>
-    <div class="r-btns"><button class="primary" id="cAgain">もういちど</button><button class="sbtn" id="cShare">けっかを シェア</button><button class="sbtn" id="cTop">タイトルへ</button></div></div>`;
+    <div class="r-btns"><button class="primary" id="cAgain">もういちど</button><button class="sbtn" id="cShare">けっかを シェア</button><button class="sbtn" id="cRank">ランキング</button><button class="sbtn" id="cTop">タイトルへ</button></div>
+    ${(R?clear:w>0)?`<div class="card"><h3>みんなの ランキングに のせる</h3>
+    <label class="fld" for="cName">ランキングに出す なまえ（10文字まで）<input id="cName" maxlength="10" value="${esc(REC.name)}" placeholder="なまえ"></label>
+    <div id="cCodeBox"></div></div>`:''}</div>`;
   $('#cAgain').onclick=()=>{unlockAudio();se('tap');R?rushStart():vsMatch({mode:'kachi',round:0,wins:0,t:0})};
   $('#cShare').onclick=e=>shareText(R?(clear?`みったーパズルの ボスラッシュを ${fmtTime(t)}で クリア！`:`みったーパズルの ボスラッシュで ${w}/6 まで すすんだ！`):`みったーパズルの かちぬきで ${w}にん ぬき！`,e.target);
   $('#cTop').onclick=()=>{se('tap');title()};
+  $('#cRank').onclick=()=>{se('tap');rankMode=mode;ranking(()=>chalPick(mode))};
+  const cBest=R?REC.bestRush:REC.bestKachi;
+  if(cBest&&(R?clear:w>0)){
+    const drawC=()=>{const nm=$('#cName').value.trim(),box=$('#cCodeBox'),sub=window.HP_ONLINE&&submitFor(window.HP_ONLINE,mode);
+      if(typeof sub!=='function'){box.innerHTML='<p>いまは ランキングに おくれません</p>';return}
+      if(cBest.sent){box.innerHTML='<p class="msg">ランキングに のせました！</p>';return}
+      if(!nm){box.innerHTML='<p>なまえを 入れると おくれます</p>';return}
+      box.innerHTML='<button class="primary" id="cSend">ランキングに おくる</button><p class="msg" id="cMsg"></p>';
+      $('#cSend').onclick=async e=>{e.target.disabled=true;e.target.textContent='おくっています…';
+        try{await sendRecord(cBest,mode,nm);se('good');drawC()}
+        catch(err){e.target.disabled=false;e.target.textContent='もういちど おくる';const mm=$('#cMsg');mm.className='msg bad';mm.textContent='おくれませんでした。つうしんを たしかめてね'}}};
+    $('#cName').oninput=()=>{REC.name=$('#cName').value.trim();saveRec();drawC()};drawC()}
   achCheck()}
 
 /* ===== せってい・ひきつぎ ===== */
