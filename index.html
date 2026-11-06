@@ -237,6 +237,7 @@ textarea.code{width:100%;min-height:80px;resize:vertical;-webkit-user-select:tex
 .ach{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 10px;opacity:.7}
 .ach.on{opacity:1;border-color:var(--star)}.ach>b{font-size:20px;color:var(--star)}.ach>div{flex:1;min-width:0;display:flex;flex-direction:column}
 .ach strong{font:500 14px var(--display)}.ach small{font-size:11px;color:var(--muted)}.ach em{font-style:normal;font-size:11px;color:var(--peach);text-align:right}
+.ach-title{font:500 24px var(--display);color:var(--star);margin:8px 0}
 .ach-pop img{width:min(60vw,240px);border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .stv{flex-direction:column;gap:10px;padding:16px}.stv>img{max-width:100%;max-height:78vh;border-radius:12px;object-fit:contain}
 .stv-bar{display:flex;align-items:center;gap:14px}.stv-bar b{font:500 16px var(--display);min-width:7em;text-align:center}
@@ -493,7 +494,7 @@ function makeCtx(){const C=window.AudioContext||window.webkitAudioContext;try{re
 const TITLE_ART=['img/title1.webp','img/title2.webp','img/title3.webp','img/title4.webp','img/title5.webp'];
 const IMG={menu:'img/menu.webp',bg:'img/arena.webp',g:'img/panel-g.webp',logo:'img/logo.webp',tower:'img/tower.webp',top:'img/top.webp',ending:'img/ending.webp'};
 /* BGM：場面ごとに曲を分けられる。書いていない場面は battle の曲を使う。iPhoneでも鳴るように mp3 */
-const AUDIO={battle:'audio/battle.mp3',boss:'audio/boss.mp3',endless:'audio/endless.mp3',title:'audio/title.mp3'};   // 1 対戦／2 ボス（オ゛崎）／3 エンドレス／4 タイトル・会話
+const AUDIO={battle:'audio/battle.mp3',boss:'audio/boss.mp3',endless:'audio/endless.mp3',title:'audio/title.mp3',rush:'audio/rush.mp3',extreme:'audio/extreme.mp3'};   // 1 対戦／2 ボス（オ゛崎）／3 エンドレス／4 タイトル・会話
 /* iPhone の古いOSでも盤面の角丸が描けるように */
 if(window.CanvasRenderingContext2D&&!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(+r||0,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
 
@@ -599,7 +600,7 @@ const SC=parseScenario(document.getElementById('SCENARIO').textContent);
 
 /* ---- 記録（この端末のブラウザの中） ---- */
 const REC_KEY='hoshipanel-v2';
-const REC_DEF=()=>({name:'',se:.8,bgm:true,prog:0,fails:[0,0,0,0,0,0],wins:0,losses:0,seenPro:false,seenOp:false,seenEpi:false,best:[],endChar:HERO,maxChain:1,diff:'normal',hard:false,hprog:0,hfails:[0,0,0,0,0,0],bestTA:[],vib:true,tut:false,ach:{},st:{plays:0,cleared:0,chars:[]}});
+const REC_DEF=()=>({name:'',se:.8,bgm:true,prog:0,fails:[0,0,0,0,0,0],wins:0,losses:0,seenPro:false,seenOp:false,seenEpi:false,best:[],endChar:HERO,maxChain:1,diff:'normal',hard:false,hprog:0,hfails:[0,0,0,0,0,0],bestTA:[],vib:true,tut:false,ach:{},st:{plays:0,cleared:0,chars:[]},bestRush:null,bestKachi:null});
 function loadRec(){try{return Object.assign(REC_DEF(),JSON.parse(localStorage.getItem(REC_KEY)||'{}'))}catch(e){return REC_DEF()}}
 function saveRec(){try{localStorage.setItem(REC_KEY,JSON.stringify(REC))}catch(e){}}
 let REC=loadRec();REC.st=Object.assign({plays:0,cleared:0,chars:[]},REC.st||{});REC.ach=REC.ach||{};
@@ -672,7 +673,7 @@ const GIMG=new Image();GIMG.src=IMG.g;
 /* ---- 盤面のしくみ（アプリと同じ。せり上がりの速さを外から変えられるようにした） ---- */
 const ROWS=12,COLS=6;
 function makePanelBoard(cv,cs,opt){
-  const NT=5,W=cs*COLS,H=cs*ROWS,DPR=2,cx=cv.getContext('2d');
+  let NT=5;const W=cs*COLS,H=cs*ROWS,DPR=2,cx=cv.getContext('2d');
   cv.style.width=W+'px';cv.style.height=H+'px';cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0);
   const B={g:[...Array(ROWS)].map(()=>Array(COLS).fill(null)),curs:{r:3,c:2},over:false,rise:0,stop:0,danger:0,chain:1,maxChain:1,cleared:0,elapsed:0,gq:0,gt:0,pops:[],shake:0,pushes:0,swaps:0,moves:0,hint:null};
   const g=B.g,mk=t=>({t,st:'idle',tm:0,ch:false}),at=(r,c)=>r>=0&&r<ROWS&&c>=0&&c<COLS?g[r][c]:null;
@@ -700,6 +701,7 @@ function makePanelBoard(cv,cs,opt){
     if(B.chain>1)B.pops.push({x:px,y:py,t:1,s:`${B.chain}れんさ`});else if(n>3)B.pops.push({x:px,y:py,t:1,s:`${n}どうじ`});
     opt.onClear&&opt.onClear(n,B.chain,send)};
   // おじゃまは届いてから少し待ってから落ちる（そのあいだに消せば「相殺」で打ち消せる）
+  B.setTypes=n=>{NT=n;next=newRow()};   // パネルの種類を かえる（6にすると ◆ が でる）
   B.addGarbage=n=>{if(n<=0)return;B.gq+=n;B.gt=Math.max(B.gt,1.6)};
   B.offset=send=>{if(send<=0||B.gq<=0)return send;const o=Math.min(send,B.gq);B.gq-=o;B.pops.push({x:W/2,y:H*.35,t:1.2,s:'そうさい！'});return send-o};
   function dropGarbage(){let n=Math.min(B.gq,18);B.gq-=n;const dropped=n;   // いちばん上から、おじゃまを落とす
@@ -890,7 +892,7 @@ function ending(done){
 }
 
 /* タイトルの「おしらせ」。書きかえるときはここ */
-const VERSION='11/06b';   // 直したら ここを かえる（どの版が開いているか 見分けるため）
+const VERSION='11/07';   // 直したら ここを かえる（どの版が開いているか 見分けるため）
 let NOTICE=['あくまでお遊びです','他キャラも実装する予定！！','勝手にお借りしてます💦💦'];
 /* おしらせは notice.txt（index.html と同じ場所）から読む。1行が1項目、# で始まる行は無視。
    読めなかったときは 上の NOTICE を出す */
@@ -911,6 +913,7 @@ function title(){
     <div class="menu-2"><button class="menu-b" id="tEnd">エンドレス<small>てんじょうまで けす</small></button><button class="menu-b" id="tTA">スコアアタック<small>2分間の しょうぶ</small></button></div>
     <button class="menu-b" id="tRank">ランキング<small>${REC.best[0]?`エンドレス じこベスト ${REC.best[0].s.toLocaleString()}てん`:'エンドレスと スコアアタック'}</small></button>
    </div>
+   <div class="menu-2"><button class="menu-b" id="tRush">ボスラッシュ<small>6人 れんぞく</small></button><button class="menu-b" id="tKachi">かちぬき<small>まけるまで たいせん</small></button></div>
    <div class="menu-2"><button class="menu-b" id="tStill">スチル<small>${achDone()}/${ACH.length} じっせき</small></button><button class="menu-b" id="tZukan">キャラずかん<small>キャラと セリフ</small></button></div>
    <div class="menu-row"><button class="sbtn" id="tSet">せってい・ひきつぎ</button><button class="sbtn" id="tHow">あそびかた</button></div>
    <div class="notice"><h3>おしらせ</h3><ul id="noticeList">${noticeHTML()}</ul></div>
@@ -922,6 +925,7 @@ function title(){
   $('#tRank').onclick=()=>{se('tap');ranking()};
   $('#tSet').onclick=()=>{se('tap');settings()};
   $('#tHow').onclick=()=>{se('tap');howto()};
+  $('#tRush').onclick=()=>{unlockAudio();se('tap');chalPick('rush')};$('#tKachi').onclick=()=>{unlockAudio();se('tap');chalPick('kachi')};
   $('#tStill').onclick=()=>{se('tap');stills()};$('#tZukan').onclick=()=>{se('tap');zukan()};
   achCheck();
 }
@@ -1176,8 +1180,10 @@ function endless(mode='end'){
      <div class="stat sm"><span>れんさ</span><b id="eC">1</b></div></div></div>
    ${CTRL_HTML}</div>`;
   const avail=Math.min(body.clientWidth,440)-96,cs=Math.max(16,Math.floor(Math.min(avail/6,(viewH()-300)/12)));
-  const level=el=>Math.min(20,1+Math.floor(el/(TA?20:30)));
-  const speed=el=>.12+(level(el)-1)*.045;
+  /* エンドレスは レベル20（10分）の先がある：60秒ごとに レベルが上がり、少しずつ速くなる。パネルは6種類に */
+  const level=el=>TA?Math.min(20,1+Math.floor(el/20)):el<600?1+Math.floor(el/30):21+Math.floor((el-600)/60);
+  const speed=el=>{const L=level(el);return L<=20?.12+(L-1)*.045:Math.min(1.6,.975+(L-20)*.025)};
+  let extra=false;
   let ft=0;const face=(ex,hold)=>{if(ended&&!hold)return;$('#eF').innerHTML=charHTML(id,ex);clearTimeout(ft);if(!hold)ft=setTimeout(()=>{if(!ended)$('#eF').innerHTML=charHTML(id,pinch?'pinch':'normal')},1500)};
   const say=t=>{if(t)$('#pvS').textContent=t};
   const me=makePanelBoard($('#pvA'),cs,{speed,onClear:(n,ch)=>{
@@ -1190,6 +1196,7 @@ function endless(mode='end'){
   function loop(t){if(ended)return;const dt=Math.min(.05,(t-t0)/1000);t0=t;
     if(!paused&&!ready)cd(dt);
     else if(!paused){me.step(dt);const pm=me.high(9);if(pm&&!pinch){face('pinch',true);say(pick(HL.pinch||[]))}if(!pm&&pinch)face('normal',true);pinch=pm;BGM.rate(me.topped()?1.25:(pm||(TA&&TA_SEC-me.elapsed<=15))?1.15:1);
+      if(!TA&&!extra&&level(me.elapsed)>20){extra=true;me.setTypes(6);BGM.start('extreme');cutin($('#pvs'),id,'ここからが ほんばん！');say('パネルが 6しゅるいに ふえた！');se('up')}
       if(TA){const left=TA_SEC-me.elapsed;if(left<=10&&!warned){warned=true;say('のこり 10びょう！');se('tap')}if(left<=0){end(true);return}}}
     me.draw();$('#eS').textContent=score.toLocaleString();$('#eL').textContent=level(me.elapsed);$('#eC').textContent=me.maxChain;
     $('#eT').textContent=TA?fmtTime(Math.max(0,Math.ceil(TA_SEC-me.elapsed))):fmtTime(me.elapsed);
@@ -1210,7 +1217,8 @@ function endless(mode='end'){
       const rec={s:score,c:me.maxChain,k:me.cleared,t:Math.round(Math.min(me.elapsed,TA?TA_SEC:1e9)),h:id,d:today(),n:REC.name||''};
       const list=bestList(mode),prevBest=list[0]?list[0].s:0;
       list.push(rec);list.sort((a,b)=>b.s-a.s);list.splice(10);REC.maxChain=Math.max(REC.maxChain,me.maxChain);
-      REC.st.plays++;REC.st.cleared+=me.cleared;if(!REC.st.chars.includes(id))REC.st.chars.push(id);saveRec();
+      REC.st.plays++;REC.st.cleared+=me.cleared;if(!REC.st.chars.includes(id))REC.st.chars.push(id);
+      if(!TA){REC.st.endTime=Math.max(REC.st.endTime||0,Math.round(me.elapsed));REC.st.endLevel=Math.max(REC.st.endLevel||0,level(me.elapsed))}saveRec();
       endlessResult(rec,score>prevBest&&score>0,mode,timeUp)},1500)}
   if(location.search.includes('debug'))window.__pvs={me,addScore:v=>score+=v};
 }
@@ -1222,7 +1230,7 @@ function endlessResult(rec,isBest,mode='end',timeUp){
    ${isBest?'<span class="newbest">じこベスト こうしん！</span>':''}
    <h2 class="display">${rec.s.toLocaleString()} てん</h2>
    <p class="note" id="rMyRank"></p>
-   <div class="r-stats"><div class="stat sm"><span>さいだいれんさ</span><b>${rec.c}</b></div><div class="stat sm"><span>けした数</span><b>${rec.k}</b></div><div class="stat sm"><span>じかん</span><b>${fmtTime(rec.t)}</b></div><div class="stat sm"><span>レベル</span><b>${Math.min(20,1+Math.floor(rec.t/(TA?20:30)))}</b></div></div>
+   <div class="r-stats"><div class="stat sm"><span>さいだいれんさ</span><b>${rec.c}</b></div><div class="stat sm"><span>けした数</span><b>${rec.k}</b></div><div class="stat sm"><span>じかん</span><b>${fmtTime(rec.t)}</b></div><div class="stat sm"><span>レベル</span><b>${TA?Math.min(20,1+Math.floor(rec.t/20)):rec.t<600?1+Math.floor(rec.t/30):21+Math.floor((rec.t-600)/60)}</b></div></div>
    <div class="r-btns"><button class="primary" id="rAgain">もういちど</button><button class="sbtn" id="rShare">けっかを シェア</button><button class="sbtn" id="rRank">ランキング</button></div>
    <div class="card"><h3>みんなの ランキングに のせる</h3>
     <label class="fld" for="rName">ランキングに出す なまえ（10文字まで）<input id="rName" maxlength="10" value="${esc(REC.name)}" placeholder="なまえ"></label>
@@ -1377,13 +1385,22 @@ const ACH=[
   {id:'pn2',n:'パネル 5,000こ',d:'パネルを ぜんぶで 5,000こ けす',s:4,ok:()=>STS().cleared>=5000,pg:()=>[STS().cleared,5000]},
   {id:'cr5',n:'なかまが ふえた',d:'5人の キャラで あそぶ（エンドレス・スコアアタック）',s:10,ok:()=>STS().chars.length>=5,pg:()=>[STS().chars.length,5]},
   {id:'cr15',n:'みんなと あそんだ',d:'15人の キャラで あそぶ（エンドレス・スコアアタック）',s:2,ok:()=>STS().chars.length>=15,pg:()=>[STS().chars.length,15]},
+  {id:'ex1',n:'ここからが ほんばん',d:'エンドレスで レベル21に とどく（10分）',t:'ほんばんの はじまり',ok:()=>(REC.st.endLevel||0)>=21},
+  {id:'ex2',n:'たいきゅう 30分',d:'エンドレスで 30分 あそびつづける',t:'たいきゅう王',ok:()=>(REC.st.endTime||0)>=1800,pg:()=>[Math.floor((REC.st.endTime||0)/60),30]},
+  {id:'ex3',n:'エンドレス 100,000',d:'エンドレスで 100,000てん',t:'10まんてん プレイヤー',ok:()=>(REC.best[0]||{s:0}).s>=100000},
+  {id:'ch8',n:'8れんさ',d:'8れんさ する',t:'れんさの まじゅつし',ok:()=>REC.maxChain>=8},
+  {id:'br1',n:'ボスラッシュ せいは',d:'ボスラッシュを クリアする',t:'ボスラッシュ せいは',ok:()=>!!REC.bestRush},
+  {id:'br2',n:'ボスラッシュ 8分いない',d:'ボスラッシュを 8分いないで クリアする',t:'はやわざ',ok:()=>!!REC.bestRush&&REC.bestRush.t<=480},
+  {id:'kn5',n:'5にん ぬき',d:'かちぬきで 5にん ぬく',t:'5にん ぬき',ok:()=>(REC.bestKachi||{w:0}).w>=5},
+  {id:'kn10',n:'10にん ぬき',d:'かちぬきで 10にん ぬく',t:'かちぬき王',ok:()=>(REC.bestKachi||{w:0}).w>=10},
+  {id:'all',n:'ぜんいんと あそんだ',d:'えらべる キャラ ぜんいんで あそぶ（エンドレス・スコアアタック）',t:'みんなの ともだち',ok:()=>ZUKAN_IDS().every(x=>STS().chars.includes(x)),pg:()=>[ZUKAN_IDS().filter(x=>STS().chars.includes(x)).length,ZUKAN_IDS().length]},
 ];
 const stillOpen=i=>ACH.some(a=>a.s===i+1&&REC.ach[a.id]);
 const achDone=()=>ACH.filter(a=>REC.ach[a.id]).length;
 function achCheck(){const nw=ACH.filter(a=>!REC.ach[a.id]&&a.ok());if(!nw.length)return;nw.forEach(a=>REC.ach[a.id]=today());saveRec();
-  let k=0;const show=()=>{const a=nw[k],s=STILLS[a.s-1],last=k===nw.length-1;se('up');
+  let k=0;const show=()=>{const a=nw[k],s=a.s?STILLS[a.s-1]:null,last=k===nw.length-1;se('up');
     closeOverlay();const o=document.createElement('div');o.className='ovl';o.id='ovl';
-    o.innerHTML=`<div class="card ach-pop"><p class="clear-ttl" style="font-size:22px">スチル かいほう！</p><img src="${s.f}" alt="${esc(s.n)}"><b>${esc(s.n)}</b><p>じっせき「${esc(a.n)}」</p>
+    o.innerHTML=`<div class="card ach-pop">${s?`<p class="clear-ttl" style="font-size:22px">スチル かいほう！</p><img src="${s.f}" alt="${esc(s.n)}"><b>${esc(s.n)}</b>`:`<p class="clear-ttl" style="font-size:22px">しょうごう ゲット！</p><b class="ach-title">「${esc(a.t)}」</b>`}<p>じっせき「${esc(a.n)}」</p>
       ${achDone()===ACH.length&&last?'<p class="msg">ぜんぶ あつめた！ しょうごう「みったーマスター」</p>':''}<button class="primary" data-k="go">${last?'とじる':'つぎへ'}</button></div>`;
     document.body.appendChild(o);o.querySelector('[data-k]').onclick=()=>{se('tap');k++;if(k<nw.length)show();else closeOverlay()}};
   show()}
@@ -1400,7 +1417,7 @@ function stills(){
     body.innerHTML=`<div class="tabs"><button class="sbtn${stillTab==='still'?' on':''}" data-t="still">スチル ${n}/${STILLS.length}</button><button class="sbtn${stillTab==='ach'?' on':''}" data-t="ach">じっせき ${achDone()}/${ACH.length}</button></div>
     ${all?'<p class="msg">しょうごう「みったーマスター」 ぜんぶ あつめた！</p>':''}
     ${stillTab==='still'?`<div class="stills">${STILLS.map((s,i)=>{const op=stillOpen(i),a=ACH.find(x=>x.s===i+1);return op?`<button class="st-c" data-i="${i}"><img src="${s.f}" alt="${esc(s.n)}" loading="lazy"><span>${esc(s.n)}</span></button>`:`<div class="st-c lock"><img src="${s.f}" alt="" loading="lazy"><i>？</i><span>${esc(a?a.d:'')}</span></div>`}).join('')}</div>`
-    :`<div class="achs">${ACH.map(a=>`<div class="ach${REC.ach[a.id]?' on':''}"><b>${REC.ach[a.id]?'★':'☆'}</b><div><strong>${esc(a.n)}</strong><small>${esc(a.d)}${!REC.ach[a.id]&&a.pg?`（いま ${Math.min(...a.pg())}/${a.pg()[1]}）`:''}</small></div><em>${REC.ach[a.id]?esc(STILLS[a.s-1].n):'？'}</em></div>`).join('')}</div>`}`;
+    :`<div class="achs">${ACH.map(a=>`<div class="ach${REC.ach[a.id]?' on':''}"><b>${REC.ach[a.id]?'★':'☆'}</b><div><strong>${esc(a.n)}</strong><small>${esc(a.d)}${!REC.ach[a.id]&&a.pg?`（いま ${Math.min(...a.pg())}/${a.pg()[1]}）`:''}</small></div><em>${REC.ach[a.id]?(a.s?esc(STILLS[a.s-1].n):'「'+esc(a.t)+'」'):(a.s?'？':'しょうごう')}</em></div>`).join('')}</div>`}`;
     body.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{se('tap');stillTab=b.dataset.t;draw()});
     body.querySelectorAll('.st-c[data-i]').forEach(b=>b.onclick=()=>{se('tap');stillViewer(+b.dataset.i)})};
   draw();achCheck()}
@@ -1420,10 +1437,104 @@ function zukanOne(id){
     body.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{se('tap');ex=b.dataset.e;draw()})};
   draw()}
 
+/* ===== チャレンジ：ボスラッシュ・かちぬき =====
+   自分のキャラは エンドレスで えらんだ キャラ。あいては えらべるキャラから ランダム（自分と凛歌いがい） */
+const CHAL={rush:{n:'ボスラッシュ',d:'ランダムな 6人と つづけて たいせん。まけたら おわり、ぜんいん たおすまでの タイムを きそう'},
+  kachi:{n:'かちぬき',d:'まけるまで たいせんを つづける。かつたびに あいてが つよくなる。なんにん ぬけるか きそう'}};
+const oppPool=me=>{const out=[];for(const id of PICK_IDS()){if(id===HERO)continue;[id,...(SOLO[id]||[])].forEach(x=>{if(unlocked(x)&&x!==me&&baseOf(x)!==baseOf(me))out.push(x)})}return out};
+function rushParams(i){   // i：0〜5（ボスラッシュ）
+  const P=Object.assign({},STAGES[i].ai);P.think*=.8;P.miss*=.5;P.chain=Math.min(1,P.chain+.3);P.deep=i>=2;return {P,speed:STAGES[i].speed+.02}}
+function kachiParams(w){   // w：いまの かち数
+  const k=Math.min(1,w/12);return {P:{think:Math.max(.3,1.05-.75*k),miss:Math.max(0,.3-.3*k),chain:Math.min(1,.1+k),def:k>.3?1:0,boost:.2+.15*k,deep:w>=6},speed:.1+Math.min(.12,w*.012)}}
+function chalPick(mode){
+  const M=CHAL[mode];if(!CHARS[REC.endChar]||!unlocked(REC.endChar))REC.endChar=HERO;
+  const body=shell(M.n,'タイトルへ',title),best=mode==='rush'?REC.bestRush:REC.bestKachi;
+  const cur=REC.endChar;
+  body.innerHTML=`<div class="card" style="align-items:center;text-align:center"><div class="r-ch" style="height:160px">${charHTML(cur,'attack')}</div><h3>${esc(CHARS[cur].name)}</h3><p>${M.d}</p>
+     <button class="sbtn" id="cChg">キャラを かえる</button></div>
+    <p class="note">じこベスト ${mode==='rush'?(best?fmtTime(best.t)+'（'+esc(best.d)+'）':'まだ ありません'):(best?best.w+'にん ぬき（'+esc(best.d)+'）':'まだ ありません')}</p>
+    ${oppPool(cur).length<6?'<p class="msg bad">あいてに なれる キャラが 6人より すくないので、おなじ あいてが でることが あります</p>':''}
+    <button class="primary big" id="cGo" style="align-self:center">スタート</button>`;
+  $('#cChg').onclick=()=>{se('tap');endlessPick('end')};
+  $('#cGo').onclick=()=>{unlockAudio();se('tap');const go=()=>mode==='rush'?rushStart():vsMatch({mode:'kachi',round:0,wins:0,t:0});if(!REC.tut)tutorial(go);else go()}}
+function rushStart(){const pool=oppPool(REC.endChar).sort(()=>Math.random()-.5);const list=[];for(let i=0;i<6;i++)list.push(pool.length?pool[i%pool.length]:'king');
+  vsMatch({mode:'rush',round:0,list,t:0,wins:0})}
+/* 1戦。st：{mode, round, list?, wins, t(それまでの秒)} */
+function vsMatch(st){
+  const meId=REC.endChar||HERO,R=st.mode==='rush',oppId=R?st.list[st.round]:pick(oppPool(meId).length?oppPool(meId):['king']);
+  const {P,speed:base}=R?rushParams(st.round):kachiParams(st.wins);
+  const HL=endlessLines(meId),SL=endlessLines(oppId),opp=CHARS[oppId];
+  let ended=false,raf=0,t0=performance.now();
+  const ttl=R?`ボスラッシュ ${st.round+1}/6`:`かちぬき ${st.wins+1}にんめ`;
+  const body=shell(ttl,'ていし',()=>pauseMenu());
+  body.innerHTML=`<div class="pvs" id="pvs"><p class="vs-say" id="pvS">${R?(st.round===5?'さいごの あいて！':`あいて ${st.round+1}人め`):`${st.wins}にん ぬき ちゅう！`}</p>
+   <div class="pvs-boards"><div class="pvs-me"><div class="pnl-wrap" style="background-image:url(${IMG.top})"><div class="pnl-bg" id="pvMi">${charHTML(meId)}</div><canvas class="me" id="pvA" width="1" height="1"></canvas></div><span class="pvs-n">${esc(R?fmtTime(st.t):playerName())}</span></div>
+    <div class="pvs-ru"><div class="pnl-wrap" style="background-image:url(${IMG.top})"><div class="pnl-bg" id="pvF">${charHTML(oppId)}</div><canvas id="pvB" width="1" height="1"></canvas></div><span class="pvs-n">${esc(opp.name)}</span></div></div>
+   ${CTRL_HTML}</div>`;
+  const avail=Math.min(body.clientWidth,420)-12,csA=Math.max(16,Math.floor(Math.min(avail*.6/6,(viewH()-300)/12))),csB=Math.max(10,Math.floor(Math.min(avail*.38/6,csA*.66)));
+  const say=t=>{if(t)$('#pvS').textContent=t};
+  const faceT={};const face=(el,id,ex,hold)=>{const m=$(el);if(!m||ended&&!hold)return;m.innerHTML=charHTML(id,ex);clearTimeout(faceT[el]);if(!hold)faceT[el]=setTimeout(()=>{if(!ended&&$(el))$(el).innerHTML=charHTML(id,'normal')},1600)};
+  const speed=el=>base+Math.min(.4,el/320);
+  let pinchMe=false,pinchRu=false,ready=false;
+  const cd=countdown($('#pvs'),()=>{ready=true;me.wait=false;say('しょうぶ！')});
+  const me=makePanelBoard($('#pvA'),csA,{speed,onDrop:()=>vib(70),
+    onClear:(n,ch,send)=>{if(ch>=2)vib(30);if(ch>=3)cutin($('#pvs'),meId,`${ch}れんさ！`);
+      if(send){const before=send;send=me.offset(send);if(send<before){se('good');say('そうさい！')}
+        if(send){ru.addGarbage(send);se('up');face('#pvMi',meId,'attack');face('#pvF',oppId,'pinch');say(pick(HL.attack||[])||'いけー！')}}else se('catch')},onLose:()=>end(false)});
+  const ru=makePanelBoard($('#pvB'),csB,{speed,
+    onClear:(n,ch,send)=>{if(ch>=3)cutin($('#pvs'),oppId,`${ch}れんさ！`,'r');
+      if(send){send=ru.offset(send);if(send){me.addGarbage(send);face('#pvF',oppId,'attack');face('#pvMi',meId,'pinch');say(pick(SL.attack||[])||'えい！')}}},onLose:()=>end(true)});
+  const ai=makeAI(ru,P);me.wait=true;
+  let paused=false;
+  function loop(t){if(ended)return;const dt=Math.min(.05,(t-t0)/1000);t0=t;
+    if(!paused&&!ready)cd(dt);
+    else if(!paused){me.step(dt);ru.step(dt);ai(dt);
+      const pm=me.high(9),pr=ru.high(9);
+      if(pm&&!pinchMe){face('#pvMi',meId,'pinch',true);if(Math.random()<.6)say(pick(HL.pinch||[]))}if(!pm&&pinchMe)face('#pvMi',meId,'normal',true);
+      if(pr&&!pinchRu){face('#pvF',oppId,'pinch',true);say(pick(SL.pinch||[]))}if(!pr&&pinchRu)face('#pvF',oppId,'normal',true);
+      pinchMe=pm;pinchRu=pr;BGM.rate(me.topped()||ru.topped()?1.25:(pm||pr)?1.15:1);
+      if(R){const n=$('#pvA').closest('.pvs-me').querySelector('.pvs-n');if(n)n.textContent=fmtTime(st.t+me.elapsed)}}
+    me.draw();ru.draw();raf=requestAnimationFrame(loop)}
+  raf=requestAnimationFrame(loop);if(st.round===0&&st.wins===0||BGM.cur!==AUDIO.rush)BGM.start('rush');
+  padUI($('#pvs'),me);
+  const setPause=v=>{paused=me.paused=v;if(v)BGM.pause();else{t0=performance.now();BGM.resume()}};
+  function pauseMenu(){if(ended)return;setPause(true);overlay(`<h3>ていし ちゅう</h3><button class="primary" data-k="go">つづける</button><button class="sbtn" data-k="hand">ボタンを 左右いれかえ</button><button class="ghost" data-k="quit">やめて もどる</button>`,k=>{
+    if(k==='hand'){REC.lefty=!REC.lefty;saveRec();applyHand();setTimeout(pauseMenu,0);return}
+    if(k==='go')setPause(false);if(k==='quit'){cleanup();BGM.stop();chalPick(st.mode)}})}
+  const onVis=()=>{if(document.hidden&&!paused&&!ended)pauseMenu()};document.addEventListener('visibilitychange',onVis);
+  function cleanup(){ended=true;cancelAnimationFrame(raf);BGM.rate(1);document.removeEventListener('visibilitychange',onVis);closeOverlay()}
+  stopGame=cleanup;
+  function end(win){if(ended)return;ended=true;BGM.rate(1);if(!win)vib([120,60,200]);
+    se(win?'up':'miss');face('#pvF',oppId,win?'lose':'win',true);face('#pvMi',meId,win?'win':'lose',true);
+    say(win?(pick(SL.lose||[])||'まけたー！'):(pick(SL.win||[])||'やったー！'));
+    const t=st.t+me.elapsed;
+    REC.maxChain=Math.max(REC.maxChain,me.maxChain);REC.st.cleared+=me.cleared;saveRec();
+    setTimeout(()=>{cleanup();
+      if(win&&R&&st.round<5)return vsMatch(Object.assign({},st,{round:st.round+1,t,wins:st.wins+1}));
+      if(win&&!R)return vsMatch(Object.assign({},st,{wins:st.wins+1,t}));
+      BGM.stop();chalResult(st.mode,R?(win?6:st.round):st.wins,t,win&&R)},1700)}
+  if(location.search.includes('debug'))window.__pvs={me,ru,P,ai,st};
+}
+function chalResult(mode,w,t,clear){
+  const R=mode==='rush',meId=REC.endChar||HERO;let isBest=false;
+  if(R){REC.st.rushBest=Math.max(REC.st.rushBest||0,w);if(clear&&(!REC.bestRush||t<REC.bestRush.t)){REC.bestRush={t:Math.round(t),h:meId,d:today()};isBest=true}}
+  else if(!REC.bestKachi||w>REC.bestKachi.w){REC.bestKachi={w,t:Math.round(t),h:meId,d:today()};isBest=w>0}
+  saveRec();
+  const body=shell('けっか','もどる',()=>chalPick(mode));
+  body.innerHTML=`<div class="result big"><div class="r-ch">${charHTML(meId,clear||(!R&&w>0)?'win':'lose')}</div>
+    <p class="note">${CHAL[mode].n}</p>${isBest?'<span class="newbest">じこベスト こうしん！</span>':''}
+    <h2 class="display">${R?(clear?`クリア！ ${fmtTime(t)}`:`${w}/6 まで すすんだ`):`${w}にん ぬき！`}</h2>
+    <p class="note">${R?(clear?'6人 ぜんいんに かった！':'つぎは さいごまで いけるかな？'):`あそんだ じかん ${fmtTime(t)}`}</p>
+    <div class="r-btns"><button class="primary" id="cAgain">もういちど</button><button class="sbtn" id="cShare">けっかを シェア</button><button class="sbtn" id="cTop">タイトルへ</button></div></div>`;
+  $('#cAgain').onclick=()=>{unlockAudio();se('tap');R?rushStart():vsMatch({mode:'kachi',round:0,wins:0,t:0})};
+  $('#cShare').onclick=e=>shareText(R?(clear?`みったーパズルの ボスラッシュを ${fmtTime(t)}で クリア！`:`みったーパズルの ボスラッシュで ${w}/6 まで すすんだ！`):`みったーパズルの かちぬきで ${w}にん ぬき！`,e.target);
+  $('#cTop').onclick=()=>{se('tap');title()};
+  achCheck()}
+
 /* ===== せってい・ひきつぎ ===== */
 function settings(){
   const body=shell('せってい・ひきつぎ','タイトルへ',title);
-  const save=()=>({v:2,name:REC.name,prog:REC.prog,fails:REC.fails,wins:REC.wins,losses:REC.losses,seenPro:REC.seenPro,seenOp:REC.seenOp,seenEpi:REC.seenEpi,best:REC.best,endChar:REC.endChar,maxChain:REC.maxChain,diff:REC.diff,hprog:REC.hprog,bestTA:REC.bestTA,tut:REC.tut,ach:REC.ach,st:REC.st,lefty:!!REC.lefty});
+  const save=()=>({v:2,name:REC.name,prog:REC.prog,fails:REC.fails,wins:REC.wins,losses:REC.losses,seenPro:REC.seenPro,seenOp:REC.seenOp,seenEpi:REC.seenEpi,best:REC.best,endChar:REC.endChar,maxChain:REC.maxChain,diff:REC.diff,hprog:REC.hprog,bestTA:REC.bestTA,tut:REC.tut,ach:REC.ach,st:REC.st,lefty:!!REC.lefty,bestRush:REC.bestRush,bestKachi:REC.bestKachi});
   const draw=()=>{const code=makeCode('S',save());
     body.innerHTML=`<div class="card"><h3>なまえ と おと</h3>
      <label class="fld" for="sName">あなたの なまえ（10文字まで）<input id="sName" maxlength="10" value="${esc(REC.name)}" placeholder="あなた"></label>
@@ -1447,7 +1558,7 @@ function settings(){
       if(pending){Object.assign(REC,REC_DEF(),{se:REC.se,bgm:REC.bgm},pending);saveRec();pending=null;draw();$('#sMsg').textContent='よみこみました！';return}
       const d=readCode('S',$('#sIn').value);
       if(!d||typeof d!=='object'||d.v!==2){m.className='msg bad';m.textContent='コードが ちがうようです。さいごまで コピーできているか たしかめてね';return}
-      pending={name:String(d.name||'').slice(0,10),prog:clamp(+d.prog||0,0,6),fails:Array.isArray(d.fails)?d.fails.slice(0,6).map(x=>+x||0):[0,0,0,0,0,0],wins:+d.wins||0,losses:+d.losses||0,seenPro:!!d.seenPro,seenOp:!!d.seenOp,seenEpi:!!d.seenEpi,diff:DIFF[d.diff]?d.diff:'normal',hprog:clamp(+d.hprog||0,0,6),bestTA:Array.isArray(d.bestTA)?d.bestTA.slice(0,10):[],tut:!!d.tut,lefty:!!d.lefty,ach:(d.ach&&typeof d.ach==='object')?d.ach:{},st:Object.assign({plays:0,cleared:0,chars:[]},d.st&&typeof d.st==='object'?d.st:{}),best:Array.isArray(d.best)?d.best.slice(0,10):[],endChar:CHARS[d.endChar]?d.endChar:HERO,maxChain:+d.maxChain||1};
+      pending={name:String(d.name||'').slice(0,10),prog:clamp(+d.prog||0,0,6),fails:Array.isArray(d.fails)?d.fails.slice(0,6).map(x=>+x||0):[0,0,0,0,0,0],wins:+d.wins||0,losses:+d.losses||0,seenPro:!!d.seenPro,seenOp:!!d.seenOp,seenEpi:!!d.seenEpi,diff:DIFF[d.diff]?d.diff:'normal',hprog:clamp(+d.hprog||0,0,6),bestTA:Array.isArray(d.bestTA)?d.bestTA.slice(0,10):[],tut:!!d.tut,lefty:!!d.lefty,bestRush:d.bestRush&&typeof d.bestRush==='object'?d.bestRush:null,bestKachi:d.bestKachi&&typeof d.bestKachi==='object'?d.bestKachi:null,ach:(d.ach&&typeof d.ach==='object')?d.ach:{},st:Object.assign({plays:0,cleared:0,chars:[]},d.st&&typeof d.st==='object'?d.st:{}),best:Array.isArray(d.best)?d.best.slice(0,10):[],endChar:CHARS[d.endChar]?d.endChar:HERO,maxChain:+d.maxChain||1};
       m.className='msg';m.textContent=`${pending.prog}/6 クリア・エンドレス ${pending.best.length}けん。いまの きろくは うわがきされます。`;e.target.textContent='うわがきして よみこむ'};
   };
   draw();
